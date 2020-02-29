@@ -4,7 +4,7 @@ using UnityEngine;
 
 using UnityEngine.Networking;
 
-public class RaiderNwkServer : RaiderNwkSystemBase
+public class NwkServer : NwkSystemBase
 {
   int port = 9999;
   int maxConnections = 10;
@@ -16,7 +16,7 @@ public class RaiderNwkServer : RaiderNwkSystemBase
     // Usually the server doesn't need to draw anything on the screen
     Application.runInBackground = true;
 
-    Screen.SetResolution(600, 400, false);
+    Screen.SetResolution(1280, 720, false);
   }
 
   override protected void setup()
@@ -106,12 +106,12 @@ public class RaiderNwkServer : RaiderNwkSystemBase
     // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
     // The first thing we do is deserialize the message to our custom type
 
-    RaiderNwkMessage objectMessage = netMessage.ReadMessage<RaiderNwkMessage>();
+    NwkMessage objectMessage = netMessage.ReadMessage<NwkMessage>();
     log(objectMessage.toString());
 
     //do stuff with message
 
-    if(objectMessage.messageType == RaiderNwkMessageType.DISCONNECTION_PONG)
+    if(objectMessage.messageType == NwkMessageType.DISCONNECTION_PONG)
     {
       log("received disconnection pong from " + objectMessage.senderUid);
       clients[objectMessage.senderUid].resetTimeout();
@@ -131,16 +131,16 @@ public class RaiderNwkServer : RaiderNwkSystemBase
   void connection_askForUid(NetworkMessage connectedClient)
   {
     
-    RaiderNwkMessage outgoingMessage = new RaiderNwkMessage();
-    outgoingMessage.setupType(RaiderNwkMessageType.CONNECTION_PINGPONG);
-    outgoingMessage.sendServerClientTransaction(connectedClient, delegate (RaiderNwkMessage clientMsg)
+    NwkMessage outgoingMessage = new NwkMessage();
+    outgoingMessage.setupType(NwkMessageType.CONNECTION_PINGPONG);
+    outgoingMessage.sendServerClientTransaction(connectedClient, delegate (NwkMessage clientMsg)
     {
       log("received uid from client " + clientMsg.senderUid);
       addClient(clientMsg.senderUid);
 
       //broadcast to all
-      RaiderNwkMessage msg = new RaiderNwkMessage();
-      msg.setupType(RaiderNwkMessageType.CONNECTION);
+      NwkMessage msg = new NwkMessage();
+      msg.setupType(NwkMessageType.CONNECTION);
       msg.message = clientMsg.senderUid;
       msg.broadcastFromServer();
     });
@@ -155,22 +155,22 @@ public class RaiderNwkServer : RaiderNwkSystemBase
     string newUid = "c"+Random.Range(0, 999999);
     
     //send message to that client
-    RaiderNwkMessage outgoingMessage = new RaiderNwkMessage();
+    NwkMessage outgoingMessage = new NwkMessage();
 
-    outgoingMessage.setupType(RaiderNwkMessageType.ASSIGN_ID);
+    outgoingMessage.setupType(NwkMessageType.ASSIGN_ID);
     outgoingMessage.message = newUid;
 
     log("solveNewClient | -> | sending uid : " + newUid);
 
     addClient(newUid);
 
-    outgoingMessage.generateToken().sendServerClientTransaction(clientMsg, delegate (RaiderNwkMessage pongMsg)
+    outgoingMessage.generateToken().sendServerClientTransaction(clientMsg, delegate (NwkMessage pongMsg)
     {
       log("solveNewClient | <- | client #"+ newUid + " acknowledged uid");
 
       // Send a message to all the clients connected
-      RaiderNwkMessage msg = new RaiderNwkMessage();
-      msg.setupType(RaiderNwkMessageType.CONNECTION);
+      NwkMessage msg = new NwkMessage();
+      msg.setupType(NwkMessageType.CONNECTION);
       msg.message = newUid;
 
       // Broadcast a message a to everyone connected
@@ -189,10 +189,10 @@ public class RaiderNwkServer : RaiderNwkSystemBase
       return;
     }
 
-    RaiderNwkMessage msg = null;
+    NwkMessage msg = null;
 
-    msg = new RaiderNwkMessage();
-    msg.setupType(RaiderNwkMessageType.DISCONNECTION_PING).broadcastFromServer();
+    msg = new NwkMessage();
+    msg.setupType(NwkMessageType.DISCONNECTION_PING).broadcastFromServer();
 
     foreach(KeyValuePair<string, NwkClientData> kp in clients)
     {

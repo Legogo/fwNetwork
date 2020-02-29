@@ -9,7 +9,7 @@ using Random = UnityEngine.Random;
 /// 
 /// </summary>
 
-public class RaiderNwkClient : RaiderNwkSystemBase
+public class NwkClient : NwkSystemBase
 {
   static public string nwkUid = "";
 
@@ -77,15 +77,15 @@ public class RaiderNwkClient : RaiderNwkSystemBase
     // You can send any object that inherence from MessageBase
     // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
     // The first thing we do is deserialize the message to our custom type
-    RaiderNwkMessage objectMessage = netMessage.ReadMessage<RaiderNwkMessage>();
+    NwkMessage objectMessage = netMessage.ReadMessage<NwkMessage>();
 
     log("Client::OnMessageReceived");
     log(objectMessage.toString());
 
-    RaiderNwkMessage msg = null;
+    NwkMessage msg = null;
     switch (objectMessage.messageType)
     {
-      case RaiderNwkMessageType.CONNECTION_PINGPONG:
+      case NwkMessageType.CONNECTION_PINGPONG:
 
         nwkUid = generateUniqNetworkId();
 
@@ -93,19 +93,19 @@ public class RaiderNwkClient : RaiderNwkSystemBase
 
         log("generating network id : "+nwkUid);
 
-        msg = new RaiderNwkMessage().setupType(RaiderNwkMessageType.CONNECTION_PINGPONG);
+        msg = new NwkMessage().setupType(NwkMessageType.CONNECTION_PINGPONG);
         msg.assignToken(objectMessage);
         msg.message = nwkUid;
         msg.sendToServer(nwkUid, client);
         
         break;
-      case RaiderNwkMessageType.ASSIGN_ID: // deprecated
+      case NwkMessageType.ASSIGN_ID: // deprecated
 
         nwkUid = objectMessage.message; // record uid
 
         log("me (#"+nwkUid+") sending -> server ? pong");
 
-        new RaiderNwkMessage().assignToken(objectMessage).sendToServer(nwkUid, client); // pong
+        new NwkMessage().assignToken(objectMessage).sendToServer(nwkUid, client); // pong
 
         addClient(nwkUid.ToString());
 

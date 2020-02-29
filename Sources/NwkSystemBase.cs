@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class RaiderNwkSystemBase : MonoBehaviour
+public class NwkSystemBase : MonoBehaviour
 {
   // The id we use to identify our messages and register the handler
   protected short messageID = 1000;
 
-  protected RaiderNwkMessageListener listener;
+  protected NwkMessageListener listener;
 
   NwkUiView nwkUiView;
 
@@ -16,15 +16,19 @@ public class RaiderNwkSystemBase : MonoBehaviour
 
   virtual protected void Awake()
   {
-    listener = RaiderNwkMessageListener.getListener();
-    if (listener == null) listener = gameObject.AddComponent<RaiderNwkMessageListener>();
+    listener = NwkMessageListener.getListener();
+    if (listener == null) listener = gameObject.AddComponent<NwkMessageListener>();
 
-    EngineLoader.loadScenes(new string[] { "network-view", "resource-camera" });
   }
   
   IEnumerator Start()
   {
-    
+    yield return null;
+    yield return null;
+
+    EngineLoader.loadScenes(new string[] { "network-view", "resource-camera" });
+
+    Debug.Log("waiting for nwk ui view");
     while (nwkUiView == null)
     {
       nwkUiView = GameObject.FindObjectOfType<NwkUiView>();

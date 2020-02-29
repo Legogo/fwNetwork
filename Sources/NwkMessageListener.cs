@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public class RaiderNwkMessageListener : MonoBehaviour
+public class NwkMessageListener : MonoBehaviour
 {
-  List<RaiderNwkMessageListenerCouple> msgs = new List<RaiderNwkMessageListenerCouple>();
+  List<NwkMessageListenerCouple> msgs = new List<NwkMessageListenerCouple>();
   
-  public void add(RaiderNwkMessage msg, Action<RaiderNwkMessage> onCompletion)
+  public void add(NwkMessage msg, Action<NwkMessage> onCompletion)
   {
-    RaiderNwkMessageListenerCouple couple = new RaiderNwkMessageListenerCouple();
+    NwkMessageListenerCouple couple = new NwkMessageListenerCouple();
     couple.onMsgReceived += onCompletion;
     couple.originalMessage = msg;
     msgs.Add(couple);
   }
 
-  public int solveReceivedMessage(RaiderNwkMessage msg)
+  public int solveReceivedMessage(NwkMessage msg)
   {
     int i = 0;
     while (i < msgs.Count)
@@ -47,16 +47,16 @@ public class RaiderNwkMessageListener : MonoBehaviour
     return ct;
   }
 
-  static public RaiderNwkMessageListener getListener()
+  static public NwkMessageListener getListener()
   {
-    return GameObject.FindObjectOfType<RaiderNwkMessageListener>();
+    return GameObject.FindObjectOfType<NwkMessageListener>();
   }
 }
 
-public struct RaiderNwkMessageListenerCouple
+public struct NwkMessageListenerCouple
 {
-  public Action<RaiderNwkMessage> onMsgReceived;
-  public RaiderNwkMessage originalMessage;
+  public Action<NwkMessage> onMsgReceived;
+  public NwkMessage originalMessage;
 
   public void clear()
   {

@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 using Random = UnityEngine.Random;
 
-public enum RaiderNwkMessageType {
+public enum NwkMessageType {
   NONE, // nothing specific
   CONNECTION, // a new client is connected (on clients)
   CONNECTION_PINGPONG, // server <-> client transaction on new client connection
@@ -11,7 +11,7 @@ public enum RaiderNwkMessageType {
   ASSIGN_ID
 };
 
-public class RaiderNwkMessage : MessageBase
+public class NwkMessage : MessageBase
 {
   public short messageId = 1000; // nwk print
 
@@ -19,35 +19,35 @@ public class RaiderNwkMessage : MessageBase
   public int token = -1; // transaction token
 
   //public int messageType = 0; // NONE
-  public RaiderNwkMessageType messageType = RaiderNwkMessageType.NONE;
+  public NwkMessageType messageType = NwkMessageType.NONE;
 
   public string message = "";
   
-  public RaiderNwkMessage setupType(RaiderNwkMessageType newType)
+  public NwkMessage setupType(NwkMessageType newType)
   {
     //messageType = (int)newType;
     messageType = newType;
     return this;
   }
 
-  public RaiderNwkMessage generateToken()
+  public NwkMessage generateToken()
   {
     token = Random.Range(0, 9999);
     return this;
   }
 
-  public RaiderNwkMessage assignToken(RaiderNwkMessage originMessage)
+  public NwkMessage assignToken(NwkMessage originMessage)
   {
     token = originMessage.token;
     return this;
   }
 
-  public bool isSameTransaction(RaiderNwkMessage other)
+  public bool isSameTransaction(NwkMessage other)
   {
     return other.token == token;
   }
 
-  public RaiderNwkMessage sendToServer(string senderUid, NetworkClient client)
+  public NwkMessage sendToServer(string senderUid, NetworkClient client)
   {
     this.senderUid = senderUid;
     client.Send(messageId, this);
@@ -57,7 +57,7 @@ public class RaiderNwkMessage : MessageBase
     return this;
   }
 
-  public RaiderNwkMessage broadcastFromServer()
+  public NwkMessage broadcastFromServer()
   {
     this.senderUid = "0";
 
@@ -66,14 +66,14 @@ public class RaiderNwkMessage : MessageBase
     return this;
   }
 
-  public RaiderNwkMessage sendServerClientTransaction(NetworkMessage receiver = null, Action<RaiderNwkMessage> onTransactionCompleted = null)
+  public NwkMessage sendServerClientTransaction(NetworkMessage receiver = null, Action<NwkMessage> onTransactionCompleted = null)
   {
     senderUid = "0";
 
     if (token < 0) generateToken();
 
     NetworkServer.SendToClient(receiver.conn.connectionId, messageId, this);
-    RaiderNwkMessageListener.getListener().add(this, onTransactionCompleted);
+    NwkMessageListener.getListener().add(this, onTransactionCompleted);
 
     return this;
   }
@@ -85,7 +85,7 @@ public class RaiderNwkMessage : MessageBase
 
   public string toString()
   {
-    string ct = "[Msg]("+((RaiderNwkMessageType)messageType).ToString() + ")";
+    string ct = "[Msg]("+((NwkMessageType)messageType).ToString() + ")";
     ct += "\n  from : " + senderUid;
     ct += "\n  token : " + token;
     ct += "\n  " + message;
