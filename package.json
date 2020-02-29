@@ -1,0 +1,28 @@
+{
+  "name": "com.andreberlemont.fwNetwork",
+  "displayName": "AB Framework Network",
+  "version": "0.0.1",
+  "unity": "2019.3",
+  "description": "framework of basic tools to make a game prototype",
+  "license":"MIT",
+
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mob-sakai/UpmGitExtension.git"
+  },
+  "src":"Assets/Lib/fwNetwork",
+
+  "keywords": [
+    "prototype",
+    "framework"
+  ],
+  "category":"Unity",
+
+  "author": {
+    "name": "André Berlemont",
+    "email": "andre.berlemont@gmail.com",
+    "url": "https://www.andreberlemont.com"
+  },
+  "dependencies": {
+  }
+}
