@@ -5,12 +5,14 @@ using System;
 using UnityEngine.Networking;
 using Random = UnityEngine.Random;
 
-public class NwkServer : NwkSystemBase
+abstract public class NwkServer : NwkSystemBase
 {
   static public NwkServer nwkServer;
 
   int port = 9999;
   int maxConnections = 10;
+
+  protected NwkSendWrapper sendServer;
 
   protected override void Awake()
   {
@@ -26,8 +28,7 @@ public class NwkServer : NwkSystemBase
 
   override protected void setup()
   {
-    //auto create
-    CreateServer();
+    CreateServer(); //auto create
   }
 
   void CreateServer()
@@ -53,6 +54,8 @@ public class NwkServer : NwkSystemBase
       if (NetworkServer.Listen(port)) log("Server created, listening on port: " + port);
       else log("No server created, could not listen to the port: " + port);
     }
+
+    sendServer = new NwkSendWrapper();
 
     onServerReady();
   }
@@ -84,78 +87,14 @@ public class NwkServer : NwkSystemBase
 
   void OnClientConnected(NetworkMessage clientConnectionMessage)
   {
-    log("OnClientConnected");
+    log("OnClientConnected ; sending ping pong transaction");
 
-    //solving new uid for client
-    connection_askForUid(clientConnectionMessage.conn.connectionId);
-
-  }
-  
-  void OnClientDisconnected(NetworkMessage netMessage)
-  {
-    log("OnClientDisconnected");
-
-    //todo
-    //ping pong avec tt le monde pour savoir qui a deco ...
-
-    broadcastDisconnectionPing();
-  }
-
-  void OnMessageReceived(NetworkMessage netMessage)
-  {
-    log("OnMessageReceived : "+netMessage.msgType);
-
-    // You can send any object that inherence from MessageBase
-    // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
-    // The first thing we do is deserialize the message to our custom type
-
-    NwkMessage objectMessage = null;
-
-    try { objectMessage = netMessage.ReadMessage<NwkMessage>(); }
-    catch { objectMessage = null; }
-
-    if(objectMessage != null)
-    {
-      log(objectMessage.toString());
-
-      switch (objectMessage.nwkMsgType)
-      {
-        case NwkMessageType.DISCONNECTION_PONG:
-          log("received disconnection pong from " + objectMessage.senderUid);
-          clients[objectMessage.senderUid].resetTimeout();
-          break;
-        default:
-          break;
-      }
-
-      if (objectMessage.isTransactionMessage())
-      {
-        log(listener.getStackCount() + " transaction(s) before solving");
-
-        listener.solveReceivedMessage(objectMessage); // check for pongs
-        log(listener.getStackCount() + " transaction(s) after solving");
-        log(listener.toString());
-      }
-    }
-    else
-    {
-      log("server couldn't read standard NwkMesssage ; passing it on");
-      onNewNwkMessage(netMessage);
-    }
-    
-  }
-
-  virtual protected void onNewNwkMessage(NetworkMessage msg)
-  { }
-
-  void connection_askForUid(int connId)
-  {
     NwkMessage outgoingMessage = new NwkMessage();
     outgoingMessage.setSender("0");
     outgoingMessage.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
 
     //give message to listener system to plug a callback
-    sendServerToClientTransaction(outgoingMessage, connId, delegate (NwkMessage clientMsg)
+    sendServer.sendServerToClientTransaction(outgoingMessage, clientConnectionMessage.conn.connectionId, delegate (NwkMessage clientMsg)
     {
       log("received uid from client " + clientMsg.senderUid);
       addClient(clientMsg.senderUid);
@@ -168,12 +107,76 @@ public class NwkServer : NwkSystemBase
       msg.setupMessage(clientMsg.senderUid); // msg will contain new client uid
 
       //send new client UID to everybody
-      broadcastFromServer(msg);
+      sendServer.broadcastServerToAll(msg);
     });
 
     log("asking to new client its uid");
     log(outgoingMessage.toString());
+
   }
+  
+  void OnClientDisconnected(NetworkMessage netMessage)
+  {
+    log("OnClientDisconnected");
+
+    broadcastDisconnectionPing();
+  }
+
+  void OnMessageReceived(NetworkMessage netMessage)
+  {
+    log("OnMessageReceived : "+netMessage.msgType);
+
+    // You can send any object that inherence from MessageBase
+    // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
+    // The first thing we do is deserialize the message to our custom type
+
+    NwkMessage incomingMessage = null;
+
+    try { incomingMessage = netMessage.ReadMessage<NwkMessage>(); }
+    catch { incomingMessage = null; }
+
+    if(incomingMessage == null)
+    {
+      log("server couldn't read standard NwkMesssage ; passing it on");
+      return;
+    }
+
+
+    log("client # " + incomingMessage.senderUid);
+    log(incomingMessage.toString());
+
+    //scope is "who" need to treat the message
+    if(incomingMessage.messageScope != 0)
+    {
+      onNewNwkMessage(incomingMessage, netMessage.conn.connectionId);
+      return;
+    }
+
+    NwkMessageType typ = (NwkMessageType)incomingMessage.messageType;
+    switch (typ)
+    {
+      case NwkMessageType.DISCONNECTION_PONG:
+        log("received disconnection pong from " + incomingMessage.senderUid);
+        clients[incomingMessage.senderUid].resetTimeout();
+        break;
+    }
+
+    if (incomingMessage.isTransactionMessage())
+    {
+      log(listener.getStackCount() + " transaction(s) before solving");
+
+      listener.solveReceivedMessage(incomingMessage); // check for pongs
+      log(listener.getStackCount() + " transaction(s) after solving");
+      log(listener.toString());
+    }
+
+  }
+
+  /// <summary>
+  /// how subcontext will solve message
+  /// connId = is id of msg sender
+  /// </summary>
+  abstract protected void onNewNwkMessage(NwkMessage msg, int connId);
 
   void broadcastDisconnectionPing()
   {
@@ -193,7 +196,7 @@ public class NwkServer : NwkSystemBase
     msg.setSender("0");
     msg.setupNwkType(NwkMessageType.DISCONNECTION_PING);
 
-    broadcastFromServer(msg);
+    sendServer.broadcastServerToAll(msg);
     
     //after deconnection we wait for a signal JIC
     foreach (KeyValuePair<string, NwkClientData> kp in clients)
@@ -202,36 +205,6 @@ public class NwkServer : NwkSystemBase
     }
     
   }
-
-
-  /// <summary>
-  /// server -> send -> client
-  /// </summary>
-  public void sendServerToClientTransaction(NwkMessage msg, int clientConnectionId, Action<NwkMessage> onTransactionCompleted = null)
-  {
-    msg.senderUid = "0";
-    msg.generateToken(); // a token for when the answer arrives
-
-    NetworkServer.SendToClient(clientConnectionId, msg.messageId, msg);
-    NwkMessageListener.getListener().add(msg, onTransactionCompleted);
-  }
-
-  public void sendToSpecificClient(NwkMessage msg, int clientConnectionId)
-  {
-    msg.senderUid = "0";
-    NetworkServer.SendToClient(clientConnectionId, msg.messageId, msg);
-  }
-
-  /// <summary>
-  /// bridge to broadcast message to everyone
-  /// only for server
-  /// </summary>
-  public void broadcastFromServer(NwkMessage msg)
-  {
-    msg.senderUid = "0";
-    NetworkServer.SendToAll(msg.messageId, msg);
-  }
-
 
 
   private void Update()

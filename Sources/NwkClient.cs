@@ -9,17 +9,18 @@ using Random = UnityEngine.Random;
 /// 
 /// </summary>
 
-public class NwkClient : NwkSystemBase
+abstract public class NwkClient : NwkSystemBase
 {
   static public NwkClient nwkClient;
-
-  static public string nwkUid = "";
+  static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
 
   int port = 9999;
   string ip = "localhost";
   
   // The network client
   public NetworkClient client;
+
+  public NwkSendWrapper sendClient;
 
   protected override void Awake()
   {
@@ -49,12 +50,13 @@ public class NwkClient : NwkSystemBase
 
     // Connect to the server
     client.Connect(ip, port);
+
+    sendClient = new NwkSendWrapper();
   }
 
   // Register the handlers for the different message types
   void RegisterHandlers()
   {
-
     // Unity have different Messages types defined in MsgType
     client.RegisterHandler(messageID, OnMessageReceived);
     client.RegisterHandler(MsgType.Connect, OnConnected);
@@ -78,62 +80,63 @@ public class NwkClient : NwkSystemBase
     // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
     // The first thing we do is deserialize the message to our custom type
 
+    NwkMessage objectMessage = null;
     try
     {
-      NwkMessage objectMessage = netMessage.ReadMessage<NwkMessage>();
-
-      log("Client::OnMessageReceived");
-      log(objectMessage.toString());
-
-      NwkMessage msg = null;
-      switch (objectMessage.nwkMsgType)
-      {
-        case NwkMessageType.CONNECTION_PINGPONG: // server is asking for a pong
-
-          nwkUid = generateUniqNetworkId();
-
-          addClient(nwkUid.ToString());
-
-          log("this client generated network id : " + nwkUid);
-
-          msg = new NwkMessage();
-          msg.setSender(nwkUid);
-          msg.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
-
-          msg.token = objectMessage.token;
-
-          msg.message = nwkUid;
-          sendToServer(msg);
-
-          onNetworkLinkReady();
-
-          break;
-      }
+      objectMessage = netMessage.ReadMessage<NwkMessage>();
     }
     catch
     {
-      log("client couldn't read standard NwkMesssage ; passing it on");
-      onNewNwkMessage(netMessage);
+      objectMessage = null;
+    }
+
+    if(objectMessage == null)
+    {
+      log("client couldn't read standard NwkMesssage");
+      return;
+    }
+
+    log("Client::OnMessageReceived");
+    log(objectMessage.toString());
+
+    if(objectMessage.messageScope != 0)
+    {
+      onNwkMessageScopeChange(objectMessage);
+      return;
+    }
+    
+    NwkMessageType mtype = (NwkMessageType)objectMessage.messageType;
+    switch (mtype)
+    {
+      case NwkMessageType.CONNECTION_PINGPONG: // server is asking for a pong
+
+        nwkUid = generateUniqNetworkId();
+
+        addClient(nwkUid.ToString());
+
+        log("this client generated network id : " + nwkUid);
+
+        NwkMessage msg = new NwkMessage();
+        msg.setSender(nwkUid);
+        msg.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
+        msg.setupMessage(nwkUid); // give local uid
+
+        msg.token = objectMessage.token; // transfert token
+
+        sendClient.sendClientToServer(msg);
+
+        onNetworkLinkReady();
+        break;
     }
 
   }
-  
 
   /// <summary>
   /// when we are sure that server and client knows each other
   /// </summary>
-  virtual protected void onNetworkLinkReady()
-  { }
+  abstract protected void onNetworkLinkReady();
+  abstract protected void onNwkMessageScopeChange(NwkMessage nwkMsg);
 
-  virtual protected void onNewNwkMessage(NetworkMessage nwkMsg)
-  { }
-
-  public void sendToServer(NwkMessage msg)
-  {
-    msg.senderUid = nwkUid; // assign client id before sending
-    client.Send(msg.messageId, msg);
-  }
-  
   static public string generateUniqNetworkId()
   {
     //solve uid

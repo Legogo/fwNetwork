@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// unused for now
+/// </summary>
+
 abstract public class NwkModules : MonoBehaviour
 {
   protected NwkClient client;

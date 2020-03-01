@@ -23,8 +23,10 @@ public class NwkSystemBase : MonoBehaviour
   
   IEnumerator Start()
   {
-    yield return null;
-    yield return null;
+    //make sure engine as not already loaded stuff
+    for (int i = 0; i < 10; i++) yield return null;
+
+    while (EngineManager.isLoading()) yield return null;
 
     EngineLoader.loadScenes(new string[] { "network-view", "resource-camera" });
 

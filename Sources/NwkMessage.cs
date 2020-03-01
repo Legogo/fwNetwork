@@ -1,7 +1,11 @@
 ﻿using UnityEngine.Networking;
 using UnityEngine;
-using System;
+using System.Collections;
+using System.Collections.Generic;
 using Random = UnityEngine.Random;
+using System;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
 public enum NwkMessageType {
   NONE, // nothing specific
@@ -13,34 +17,35 @@ public enum NwkMessageType {
 
 /// <summary>
 /// senderUID allows receiver to know who sent the message
+/// /!\ every properties must be public or flagged as serialized
 /// </summary>
-
 public class NwkMessage : MessageBase
 {
   public short messageId = 1000; // nwk print (:shrug:)
-
-  public string senderUid = "0"; // uniq id on network, server is 0
   
-  public NwkMessageType nwkMsgType = NwkMessageType.NONE;
+  public string senderUid = "-1"; // uniq id on network, server is 0
+  public int messageScope = 0; // 0 is basic msg ; all above is a specific way to discriminate
+  public int messageType = 0;
+  
+  public string messageHeader = ""; // the actual message
+  public byte[] messageBytes;
 
   public int token = -1; // transaction token (not needed for one way transaction)
   
-  public string message = ""; // the actual message
+
+
+  public void setSender(string senderUid) => this.senderUid = senderUid;
+  public void setScope(int newScope) => messageScope = newScope;
+  public void setupNwkType(NwkMessageType typ) => messageType = (int)typ;
+  public void setupNwkType(int typ) => messageType = typ;
   
-  public void setSender(string senderUid)
-  {
-    this.senderUid = senderUid;
-  }
+  public void setupMessage(string header) => messageHeader = header;
+  public void setupMessage(object obj) => messageBytes = serializeObject(obj);
+  
+  public object getMessage() => deserializeObject(messageBytes);
+  public string getHeader() => messageHeader;
 
-  public void setupNwkType(NwkMessageType typ)
-  {
-    nwkMsgType = typ;
-  }
-
-  public void setupMessage(string msg)
-  {
-    message = msg;
-  }
+  public bool cmpMessageType(NwkMessageType typ) => messageType == (int)typ;
 
   public void generateToken()
   {
@@ -58,10 +63,32 @@ public class NwkMessage : MessageBase
 
   public string toString()
   {
-    string ct = "[Msg]("+((NwkMessageType)nwkMsgType).ToString() + ")";
+    string ct = "["+GetType()+"] (scope ? "+messageScope+" , type ? " + messageType + ")";
+
     ct += "\n  from : " + senderUid;
-    ct += "\n  token : " + token;
-    ct += "\n  " + message;
+    
+    if(token > -1) ct += "\n  token : " + token;
+    if(messageHeader.Length > 0) ct += "\n  message : " + messageHeader;
+
     return ct;
   }
+
+  public static byte[] serializeObject(object obj)
+  {
+    MemoryStream stream = new MemoryStream();
+    BinaryFormatter bf = new BinaryFormatter();
+
+    bf.Serialize(stream, obj);
+
+    return stream.GetBuffer();
+  }
+
+  public static object deserializeObject(byte[] buffer)
+  {
+    MemoryStream stream = new MemoryStream(buffer);
+    BinaryFormatter bf = new BinaryFormatter();
+
+    return bf.Deserialize(stream);
+  }
+
 }

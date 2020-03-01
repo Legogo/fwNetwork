@@ -9,12 +9,12 @@ public class NwkConnectionTimeout : NwkModules
 {
   public override void onMessage(NwkMessage msg)
   {
-    if (msg.nwkMsgType != NwkMessageType.DISCONNECTION_PING) return;
+    if (msg.messageType != (int)NwkMessageType.DISCONNECTION_PING) return;
 
-    NwkMessage output = new NwkMessage();
-    output.setSender(NwkClient.nwkUid);
-    output.setupNwkType(NwkMessageType.DISCONNECTION_PONG);
+    NwkMessage outgoing = new NwkMessage();
+    outgoing.setSender(NwkClient.nwkUid);
+    outgoing.setupNwkType(NwkMessageType.DISCONNECTION_PONG);
 
-    NwkClient.nwkClient.sendToServer(output);
+    NwkClient.nwkClient.sendClient.sendClientToServer(outgoing);
   }
 }
