@@ -1,0 +1,39 @@
+[1mdiff --git a/Sources/NwkClient.cs b/Sources/NwkClient.cs[m
+[1mindex 005f0f3..8d6c141 100644[m
+[1m--- a/Sources/NwkClient.cs[m
+[1m+++ b/Sources/NwkClient.cs[m
+[36m@@ -19,9 +19,6 @@[m [mabstract public class NwkClient : NwkSystemBase[m
+     return int.Parse(nwkUid);[m
+   }[m
+ [m
+[31m-  int port = 9999;[m
+[31m-  string ip = "localhost";[m
+[31m-  [m
+   // The network client[m
+   public NetworkClient client;[m
+ [m
+[36m@@ -53,6 +50,11 @@[m [mabstract public class NwkClient : NwkSystemBase[m
+     // Register the handlers for the different network messages[m
+     RegisterHandlers();[m
+ [m
+[32m+[m[41m    [m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  public void connectToIpPort(string ip = "localhost", int port = 9999)[m
+[32m+[m[32m  {[m
+     // Connect to the server[m
+     client.Connect(ip, port);[m
+ [m
+[1mdiff --git a/Sources/NwkServer.cs b/Sources/NwkServer.cs[m
+[1mindex 1389fa5..df5b714 100644[m
+[1m--- a/Sources/NwkServer.cs[m
+[1m+++ b/Sources/NwkServer.cs[m
+[36m@@ -23,7 +23,7 @@[m [mabstract public class NwkServer : NwkSystemBase[m
+     // Usually the server doesn't need to draw anything on the screen[m
+     Application.runInBackground = true;[m
+ [m
+[31m-    Screen.SetResolution(720, 720, false);[m
+[32m+[m[32m    Screen.SetResolution(1280, 720, false);[m
+   }[m
+ [m
+   override protected void setup()[m

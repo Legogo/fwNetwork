@@ -23,7 +23,7 @@ abstract public class NwkServer : NwkSystemBase
     // Usually the server doesn't need to draw anything on the screen
     Application.runInBackground = true;
 
-    Screen.SetResolution(720, 720, false);
+    Screen.SetResolution(1280, 720, false);
   }
 
   override protected void setup()

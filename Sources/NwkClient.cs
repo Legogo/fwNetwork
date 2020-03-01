@@ -19,9 +19,6 @@ abstract public class NwkClient : NwkSystemBase
     return int.Parse(nwkUid);
   }
 
-  int port = 9999;
-  string ip = "localhost";
-  
   // The network client
   public NetworkClient client;
 
@@ -53,6 +50,11 @@ abstract public class NwkClient : NwkSystemBase
     // Register the handlers for the different network messages
     RegisterHandlers();
 
+    
+  }
+
+  public void connectToIpPort(string ip = "localhost", int port = 9999)
+  {
     // Connect to the server
     client.Connect(ip, port);
 
