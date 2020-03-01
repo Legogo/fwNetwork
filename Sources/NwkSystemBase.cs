@@ -57,6 +57,20 @@ public class NwkSystemBase : MonoBehaviour
     refreshClientList();
   }
 
+  public NwkClientData getClient(string uid)
+  {
+    foreach(KeyValuePair<string, NwkClientData> kp in clients)
+    {
+      if (kp.Key == uid) return kp.Value;
+    }
+    return null;
+  }
+
+  public int countConnectedClients()
+  {
+    return clients.Keys.Count;
+  }
+
   protected void refreshClientList()
   {
     List<NwkClientData> list = new List<NwkClientData>();
@@ -67,7 +81,7 @@ public class NwkSystemBase : MonoBehaviour
     nwkUiView.refreshClientList(list);
   }
 
-  protected void log(string ct)
+  public void log(string ct)
   {
     nwkUiView.addLog(ct);
   }

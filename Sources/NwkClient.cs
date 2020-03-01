@@ -14,7 +14,10 @@ abstract public class NwkClient : NwkSystemBase
   static public NwkClient nwkClient;
   static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
 
-  static public int getParsedNwkUid() => int.Parse(nwkUid);
+  static public int getParsedNwkUid()
+  {
+    return int.Parse(nwkUid);
+  }
 
   int port = 9999;
   string ip = "localhost";
@@ -82,32 +85,35 @@ abstract public class NwkClient : NwkSystemBase
     // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
     // The first thing we do is deserialize the message to our custom type
 
-    NwkMessage objectMessage = null;
+    NwkMessage incomingMessage = null;
     try
     {
-      objectMessage = netMessage.ReadMessage<NwkMessage>();
+      incomingMessage = netMessage.ReadMessage<NwkMessage>();
     }
     catch
     {
-      objectMessage = null;
+      incomingMessage = null;
     }
 
-    if(objectMessage == null)
+    if(incomingMessage == null)
     {
       log("client couldn't read standard NwkMesssage");
       return;
     }
 
-    log("Client::OnMessageReceived");
-    log(objectMessage.toString());
-
-    if(objectMessage.messageScope != 0)
+    if(!incomingMessage.silent)
     {
-      onNwkMessageScopeChange(objectMessage);
+      log("Client::OnMessageReceived");
+      log(incomingMessage.toString());
+    }
+
+    if (incomingMessage.messageScope != 0)
+    {
+      onNwkMessageScopeChange(incomingMessage);
       return;
     }
     
-    NwkMessageType mtype = (NwkMessageType)objectMessage.messageType;
+    NwkMessageType mtype = (NwkMessageType)incomingMessage.messageType;
     switch (mtype)
     {
       case NwkMessageType.CONNECTION_PINGPONG: // server is asking for a pong
@@ -123,7 +129,7 @@ abstract public class NwkClient : NwkSystemBase
         msg.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
         msg.setupMessage(nwkUid); // give local uid
 
-        msg.token = objectMessage.token; // transfert token
+        msg.token = incomingMessage.token; // transfert token
 
         sendClient.sendClientToServer(msg);
 
@@ -142,7 +148,7 @@ abstract public class NwkClient : NwkSystemBase
   static public string generateUniqNetworkId()
   {
     //solve uid
-    string newUid = "c" + Random.Range(0, 999999);
+    string newUid = Random.Range(0, 999999).ToString();
     return newUid;
   }
 }

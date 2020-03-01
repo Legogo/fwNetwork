@@ -35,9 +35,9 @@ public class NwkSendWrapper
   /// bridge to broadcast message to everyone
   /// only for server
   /// </summary>
-  public void broadcastServerToAll(NwkMessage msg)
+  public void broadcastServerToAll(NwkMessage msg, string senderUid)
   {
-    msg.setSender("0");
+    msg.setSender(senderUid);
     NetworkServer.SendToAll(msg.messageId, msg);
   }
 

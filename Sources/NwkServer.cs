@@ -23,7 +23,7 @@ abstract public class NwkServer : NwkSystemBase
     // Usually the server doesn't need to draw anything on the screen
     Application.runInBackground = true;
 
-    Screen.SetResolution(1280, 720, false);
+    Screen.SetResolution(720, 720, false);
   }
 
   override protected void setup()
@@ -107,7 +107,7 @@ abstract public class NwkServer : NwkSystemBase
       msg.setupMessage(clientMsg.senderUid); // msg will contain new client uid
 
       //send new client UID to everybody
-      sendServer.broadcastServerToAll(msg);
+      sendServer.broadcastServerToAll(msg, "0");
     });
 
     log("asking to new client its uid");
@@ -122,9 +122,11 @@ abstract public class NwkServer : NwkSystemBase
     broadcastDisconnectionPing();
   }
 
+  virtual protected void onDisconnection(int uid) { }
+
   void OnMessageReceived(NetworkMessage netMessage)
   {
-    log("OnMessageReceived : "+netMessage.msgType);
+    //log("OnMessageReceived : "+netMessage.msgType);
 
     // You can send any object that inherence from MessageBase
     // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
@@ -142,11 +144,14 @@ abstract public class NwkServer : NwkSystemBase
     }
 
 
-    log("client # " + incomingMessage.senderUid);
-    log(incomingMessage.toString());
+    if(!incomingMessage.silent)
+    {
+      log("client # " + incomingMessage.senderUid);
+      log(incomingMessage.toString());
+    }
 
     //scope is "who" need to treat the message
-    if(incomingMessage.messageScope != 0)
+    if (incomingMessage.messageScope != 0)
     {
       onNewNwkMessage(incomingMessage, netMessage.conn.connectionId);
       return;
@@ -196,7 +201,7 @@ abstract public class NwkServer : NwkSystemBase
     msg.setSender("0");
     msg.setupNwkType(NwkMessageType.DISCONNECTION_PING);
 
-    sendServer.broadcastServerToAll(msg);
+    sendServer.broadcastServerToAll(msg, "0");
     
     //after deconnection we wait for a signal JIC
     foreach (KeyValuePair<string, NwkClientData> kp in clients)

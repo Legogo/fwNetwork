@@ -31,7 +31,7 @@ public class NwkMessage : MessageBase
   public byte[] messageBytes;
 
   public int token = -1; // transaction token (not needed for one way transaction)
-  
+  public bool silent = false; // no logs
 
 
   public void setSender(string senderUid) => this.senderUid = senderUid;
@@ -40,7 +40,7 @@ public class NwkMessage : MessageBase
   public void setupNwkType(int typ) => messageType = typ;
   
   public void setupMessage(string header) => messageHeader = header;
-  public void setupMessage(object obj) => messageBytes = serializeObject(obj);
+  public void setupMessageData(object obj) => messageBytes = serializeObject(obj);
   
   public object getMessage() => deserializeObject(messageBytes);
   public string getHeader() => messageHeader;
