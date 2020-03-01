@@ -2,15 +2,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// in change to react to disconnection ping
+/// </summary>
 public class NwkConnectionTimeout : NwkModules
 {
   public override void onMessage(NwkMessage msg)
   {
-
-    if (msg.messageType != NwkMessageType.DISCONNECTION_PING) return;
+    if (msg.nwkMsgType != NwkMessageType.DISCONNECTION_PING) return;
 
     NwkMessage output = new NwkMessage();
+    output.setSender(NwkClient.nwkUid);
+    output.setupNwkType(NwkMessageType.DISCONNECTION_PONG);
 
-    output.setupType(NwkMessageType.DISCONNECTION_PONG).sendToServer(NwkClient.nwkUid, client.client);
+    NwkClient.nwkClient.sendToServer(output);
   }
 }

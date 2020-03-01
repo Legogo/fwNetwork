@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
+/// <summary>
+/// this is a local manager meant to wait for msg answers
+/// </summary>
 public class NwkMessageListener : MonoBehaviour
 {
+  //stack of message to process
   List<NwkMessageListenerCouple> msgs = new List<NwkMessageListenerCouple>();
   
   public void add(NwkMessage msg, Action<NwkMessage> onCompletion)
@@ -15,8 +19,13 @@ public class NwkMessageListener : MonoBehaviour
     msgs.Add(couple);
   }
 
+  /// <summary>
+  /// called by server on message received
+  /// </summary>
+  /// <returns>quantity of message left to process</returns>
   public int solveReceivedMessage(NwkMessage msg)
   {
+    //search for transaction and remove it
     int i = 0;
     while (i < msgs.Count)
     {
@@ -37,6 +46,9 @@ public class NwkMessageListener : MonoBehaviour
     return msgs.Count;
   }
 
+  /// <summary>
+  /// debug
+  /// </summary>
   public string toString()
   {
     string ct = "[listener]";

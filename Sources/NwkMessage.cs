@@ -5,87 +5,60 @@ using Random = UnityEngine.Random;
 
 public enum NwkMessageType {
   NONE, // nothing specific
-  CONNECTION, // a new client is connected (on clients)
+  CONNECTION, // a new client is connected (on clients) ; msg contains uid
   CONNECTION_PINGPONG, // server <-> client transaction on new client connection
   DISCONNECTION_PING, DISCONNECTION_PONG,
   ASSIGN_ID
 };
 
+/// <summary>
+/// senderUID allows receiver to know who sent the message
+/// </summary>
+
 public class NwkMessage : MessageBase
 {
-  public short messageId = 1000; // nwk print
+  public short messageId = 1000; // nwk print (:shrug:)
 
-  public string senderUid = ""; // uniq id on network
-  public int token = -1; // transaction token
-
-  //public int messageType = 0; // NONE
-  public NwkMessageType messageType = NwkMessageType.NONE;
-
-  public string message = "";
+  public string senderUid = "0"; // uniq id on network, server is 0
   
-  public NwkMessage setupType(NwkMessageType newType)
-  {
-    //messageType = (int)newType;
-    messageType = newType;
-    return this;
-  }
+  public NwkMessageType nwkMsgType = NwkMessageType.NONE;
 
-  public NwkMessage generateToken()
-  {
-    token = Random.Range(0, 9999);
-    return this;
-  }
-
-  public NwkMessage assignToken(NwkMessage originMessage)
-  {
-    token = originMessage.token;
-    return this;
-  }
-
-  public bool isSameTransaction(NwkMessage other)
-  {
-    return other.token == token;
-  }
-
-  public NwkMessage sendToServer(string senderUid, NetworkClient client)
+  public int token = -1; // transaction token (not needed for one way transaction)
+  
+  public string message = ""; // the actual message
+  
+  public void setSender(string senderUid)
   {
     this.senderUid = senderUid;
-    client.Send(messageId, this);
-
-    Debug.Log(toString());
-
-    return this;
   }
 
-  public NwkMessage broadcastFromServer()
+  public void setupNwkType(NwkMessageType typ)
   {
-    this.senderUid = "0";
-
-    NetworkServer.SendToAll(messageId, this);
-    
-    return this;
+    nwkMsgType = typ;
   }
 
-  public NwkMessage sendServerClientTransaction(NetworkMessage receiver = null, Action<NwkMessage> onTransactionCompleted = null)
+  public void setupMessage(string msg)
   {
-    senderUid = "0";
-
-    if (token < 0) generateToken();
-
-    NetworkServer.SendToClient(receiver.conn.connectionId, messageId, this);
-    NwkMessageListener.getListener().add(this, onTransactionCompleted);
-
-    return this;
+    message = msg;
   }
 
-  public bool isTransactionMessage()
+  public void generateToken()
   {
-    return token > -1;
+    if (token > -1) return;
+    token = Random.Range(0, 9999);
   }
+
+  /// <summary>
+  /// if message as a token, it's a transaction
+  /// </summary>
+  /// <returns></returns>
+  public bool isTransactionMessage() => token > -1;
+
+  public bool isSameTransaction(NwkMessage other) => other.token == token;
 
   public string toString()
   {
-    string ct = "[Msg]("+((NwkMessageType)messageType).ToString() + ")";
+    string ct = "[Msg]("+((NwkMessageType)nwkMsgType).ToString() + ")";
     ct += "\n  from : " + senderUid;
     ct += "\n  token : " + token;
     ct += "\n  " + message;

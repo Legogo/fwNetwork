@@ -69,5 +69,14 @@ public class NwkSystemBase : MonoBehaviour
   {
     nwkUiView.addLog(ct);
   }
-  
+
+  static public bool isClient() => NwkClient.nwkClient != null;
+  static public bool isServer() => NwkServer.nwkServer != null;
+
+  static public bool isNetwork()
+  {
+    if (NwkServer.nwkServer != null) return true;
+    if (NwkClient.nwkClient != null) return true;
+    return false;
+  }
 }

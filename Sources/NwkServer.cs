@@ -1,17 +1,22 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using System;
 using UnityEngine.Networking;
+using Random = UnityEngine.Random;
 
 public class NwkServer : NwkSystemBase
 {
+  static public NwkServer nwkServer;
+
   int port = 9999;
   int maxConnections = 10;
 
   protected override void Awake()
   {
     base.Awake();
+
+    nwkServer = this;
 
     // Usually the server doesn't need to draw anything on the screen
     Application.runInBackground = true;
@@ -21,6 +26,7 @@ public class NwkServer : NwkSystemBase
 
   override protected void setup()
   {
+    //auto create
     CreateServer();
   }
 
@@ -47,7 +53,12 @@ public class NwkServer : NwkSystemBase
       if (NetworkServer.Listen(port)) log("Server created, listening on port: " + port);
       else log("No server created, could not listen to the port: " + port);
     }
+
+    onServerReady();
   }
+
+  virtual protected void onServerReady()
+  { }
 
   void OnApplicationQuit()
   {
@@ -69,25 +80,17 @@ public class NwkServer : NwkSystemBase
     NetworkServer.RegisterHandler(t, handler);
   }
 
-  void OnClientConnected(NetworkMessage netMessage)
-  {
-    // Do stuff when a client connects to this server
 
+
+  void OnClientConnected(NetworkMessage clientConnectionMessage)
+  {
     log("OnClientConnected");
 
     //solving new uid for client
-    //connection_solveNewClient(netMessage);
-    connection_askForUid(netMessage);
-
-    // Send a thank you message to the client that just connected
-    //RaiderNwkMessage messageContainer = new RaiderNwkMessage();
-    //messageContainer.message = "Thanks for joining!";
-
-    // This sends a message to a specific client, using the connectionId
-    //NetworkServer.SendToClient(netMessage.conn.connectionId, messageID, messageContainer);
+    connection_askForUid(clientConnectionMessage.conn.connectionId);
 
   }
-
+  
   void OnClientDisconnected(NetworkMessage netMessage)
   {
     log("OnClientDisconnected");
@@ -100,106 +103,136 @@ public class NwkServer : NwkSystemBase
 
   void OnMessageReceived(NetworkMessage netMessage)
   {
-    log("OnMessageReceived");
+    log("OnMessageReceived : "+netMessage.msgType);
 
     // You can send any object that inherence from MessageBase
     // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
     // The first thing we do is deserialize the message to our custom type
 
-    NwkMessage objectMessage = netMessage.ReadMessage<NwkMessage>();
-    log(objectMessage.toString());
+    NwkMessage objectMessage = null;
 
-    //do stuff with message
+    try { objectMessage = netMessage.ReadMessage<NwkMessage>(); }
+    catch { objectMessage = null; }
 
-    if(objectMessage.messageType == NwkMessageType.DISCONNECTION_PONG)
+    if(objectMessage != null)
     {
-      log("received disconnection pong from " + objectMessage.senderUid);
-      clients[objectMessage.senderUid].resetTimeout();
-    }
+      log(objectMessage.toString());
 
-    if (objectMessage.isTransactionMessage())
+      switch (objectMessage.nwkMsgType)
+      {
+        case NwkMessageType.DISCONNECTION_PONG:
+          log("received disconnection pong from " + objectMessage.senderUid);
+          clients[objectMessage.senderUid].resetTimeout();
+          break;
+        default:
+          break;
+      }
+
+      if (objectMessage.isTransactionMessage())
+      {
+        log(listener.getStackCount() + " transaction(s) before solving");
+
+        listener.solveReceivedMessage(objectMessage); // check for pongs
+        log(listener.getStackCount() + " transaction(s) after solving");
+        log(listener.toString());
+      }
+    }
+    else
     {
-      log(listener.getStackCount() + " transaction(s) before solving");
-
-      listener.solveReceivedMessage(objectMessage); // check for pongs
-      log(listener.getStackCount()+ " transaction(s) after solving");
-      log(listener.toString());
+      log("server couldn't read standard NwkMesssage ; passing it on");
+      onNewNwkMessage(netMessage);
     }
-
+    
   }
 
-  void connection_askForUid(NetworkMessage connectedClient)
+  virtual protected void onNewNwkMessage(NetworkMessage msg)
+  { }
+
+  void connection_askForUid(int connId)
   {
-    
     NwkMessage outgoingMessage = new NwkMessage();
-    outgoingMessage.setupType(NwkMessageType.CONNECTION_PINGPONG);
-    outgoingMessage.sendServerClientTransaction(connectedClient, delegate (NwkMessage clientMsg)
+    outgoingMessage.setSender("0");
+    outgoingMessage.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
+
+    //give message to listener system to plug a callback
+    sendServerToClientTransaction(outgoingMessage, connId, delegate (NwkMessage clientMsg)
     {
       log("received uid from client " + clientMsg.senderUid);
       addClient(clientMsg.senderUid);
 
       //broadcast to all
       NwkMessage msg = new NwkMessage();
-      msg.setupType(NwkMessageType.CONNECTION);
-      msg.message = clientMsg.senderUid;
-      msg.broadcastFromServer();
+      msg.setupNwkType(NwkMessageType.CONNECTION);
+      msg.setSender("0");
+
+      msg.setupMessage(clientMsg.senderUid); // msg will contain new client uid
+
+      //send new client UID to everybody
+      broadcastFromServer(msg);
     });
 
     log("asking to new client its uid");
     log(outgoingMessage.toString());
   }
 
-  void connection_solveNewClient(NetworkMessage clientMsg)
-  {
-    //solve uid
-    string newUid = "c"+Random.Range(0, 999999);
-    
-    //send message to that client
-    NwkMessage outgoingMessage = new NwkMessage();
-
-    outgoingMessage.setupType(NwkMessageType.ASSIGN_ID);
-    outgoingMessage.message = newUid;
-
-    log("solveNewClient | -> | sending uid : " + newUid);
-
-    addClient(newUid);
-
-    outgoingMessage.generateToken().sendServerClientTransaction(clientMsg, delegate (NwkMessage pongMsg)
-    {
-      log("solveNewClient | <- | client #"+ newUid + " acknowledged uid");
-
-      // Send a message to all the clients connected
-      NwkMessage msg = new NwkMessage();
-      msg.setupType(NwkMessageType.CONNECTION);
-      msg.message = newUid;
-
-      // Broadcast a message a to everyone connected
-      msg.broadcastFromServer();
-    });
-    
-  }
-
   void broadcastDisconnectionPing()
   {
     log("server -> broadcasting disconnection ping (clients "+clients.Count+")");
 
+    //error
     if(clients.Count == 0)
     {
       log("disconnection event but no clients recorded ?");
       return;
     }
 
-    NwkMessage msg = null;
+    //send a disconnection transaction to everyone
+    //server will start timeout-ing all clients
+    //and will stop timeout-ing everyclients that answers
+    NwkMessage msg = new NwkMessage();
+    msg.setSender("0");
+    msg.setupNwkType(NwkMessageType.DISCONNECTION_PING);
 
-    msg = new NwkMessage();
-    msg.setupType(NwkMessageType.DISCONNECTION_PING).broadcastFromServer();
-
-    foreach(KeyValuePair<string, NwkClientData> kp in clients)
+    broadcastFromServer(msg);
+    
+    //after deconnection we wait for a signal JIC
+    foreach (KeyValuePair<string, NwkClientData> kp in clients)
     {
       clients[kp.Key].startTimeout();
     }
     
   }
+
+
+  /// <summary>
+  /// server -> send -> client
+  /// </summary>
+  public void sendServerToClientTransaction(NwkMessage msg, int clientConnectionId, Action<NwkMessage> onTransactionCompleted = null)
+  {
+    msg.senderUid = "0";
+    msg.generateToken(); // a token for when the answer arrives
+
+    NetworkServer.SendToClient(clientConnectionId, msg.messageId, msg);
+    NwkMessageListener.getListener().add(msg, onTransactionCompleted);
+  }
+
+  public void sendToSpecificClient(NwkMessage msg, int clientConnectionId)
+  {
+    msg.senderUid = "0";
+    NetworkServer.SendToClient(clientConnectionId, msg.messageId, msg);
+  }
+
+  /// <summary>
+  /// bridge to broadcast message to everyone
+  /// only for server
+  /// </summary>
+  public void broadcastFromServer(NwkMessage msg)
+  {
+    msg.senderUid = "0";
+    NetworkServer.SendToAll(msg.messageId, msg);
+  }
+
+
 
   private void Update()
   {

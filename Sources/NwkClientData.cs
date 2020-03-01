@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// structure to describe a client
+/// </summary>
 public class NwkClientData
 {
   public enum ClientState { CONNECTED, DISCONNECTED };

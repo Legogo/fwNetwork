@@ -11,6 +11,8 @@ using Random = UnityEngine.Random;
 
 public class NwkClient : NwkSystemBase
 {
+  static public NwkClient nwkClient;
+
   static public string nwkUid = "";
 
   int port = 9999;
@@ -18,7 +20,13 @@ public class NwkClient : NwkSystemBase
   
   // The network client
   public NetworkClient client;
-  
+
+  protected override void Awake()
+  {
+    base.Awake();
+    nwkClient = this;
+  }
+
   override protected void setup()
   {
     CreateClient();
@@ -55,20 +63,12 @@ public class NwkClient : NwkSystemBase
 
   void OnConnected(NetworkMessage message)
   {
-    // Do stuff when connected to the server
-
-    //RaiderNwkMessage messageContainer = new RaiderNwkMessage();
-    //messageContainer.message = "Hello server!";
-
-    // Say hi to the server when connected
-    //client.Send(messageID, messageContainer);
-
     log("Client::OnConnected : " + message.msgType);
   }
 
   void OnDisconnected(NetworkMessage message)
   {
-    // Do stuff when disconnected to the server
+    log("Client::OnDisconnected : " + message.msgType);
   }
 
   // Message received from the server
@@ -77,43 +77,63 @@ public class NwkClient : NwkSystemBase
     // You can send any object that inherence from MessageBase
     // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
     // The first thing we do is deserialize the message to our custom type
-    NwkMessage objectMessage = netMessage.ReadMessage<NwkMessage>();
 
-    log("Client::OnMessageReceived");
-    log(objectMessage.toString());
-
-    NwkMessage msg = null;
-    switch (objectMessage.messageType)
+    try
     {
-      case NwkMessageType.CONNECTION_PINGPONG:
+      NwkMessage objectMessage = netMessage.ReadMessage<NwkMessage>();
 
-        nwkUid = generateUniqNetworkId();
+      log("Client::OnMessageReceived");
+      log(objectMessage.toString());
 
-        addClient(nwkUid.ToString());
+      NwkMessage msg = null;
+      switch (objectMessage.nwkMsgType)
+      {
+        case NwkMessageType.CONNECTION_PINGPONG: // server is asking for a pong
 
-        log("generating network id : "+nwkUid);
+          nwkUid = generateUniqNetworkId();
 
-        msg = new NwkMessage().setupType(NwkMessageType.CONNECTION_PINGPONG);
-        msg.assignToken(objectMessage);
-        msg.message = nwkUid;
-        msg.sendToServer(nwkUid, client);
-        
-        break;
-      case NwkMessageType.ASSIGN_ID: // deprecated
+          addClient(nwkUid.ToString());
 
-        nwkUid = objectMessage.message; // record uid
+          log("this client generated network id : " + nwkUid);
 
-        log("me (#"+nwkUid+") sending -> server ? pong");
+          msg = new NwkMessage();
+          msg.setSender(nwkUid);
+          msg.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
 
-        new NwkMessage().assignToken(objectMessage).sendToServer(nwkUid, client); // pong
+          msg.token = objectMessage.token;
 
-        addClient(nwkUid.ToString());
+          msg.message = nwkUid;
+          sendToServer(msg);
 
-        break;
+          onNetworkLinkReady();
+
+          break;
+      }
     }
-    
-  }
+    catch
+    {
+      log("client couldn't read standard NwkMesssage ; passing it on");
+      onNewNwkMessage(netMessage);
+    }
 
+  }
+  
+
+  /// <summary>
+  /// when we are sure that server and client knows each other
+  /// </summary>
+  virtual protected void onNetworkLinkReady()
+  { }
+
+  virtual protected void onNewNwkMessage(NetworkMessage nwkMsg)
+  { }
+
+  public void sendToServer(NwkMessage msg)
+  {
+    msg.senderUid = nwkUid; // assign client id before sending
+    client.Send(msg.messageId, msg);
+  }
+  
   static public string generateUniqNetworkId()
   {
     //solve uid
