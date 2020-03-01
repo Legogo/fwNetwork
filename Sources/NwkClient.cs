@@ -14,6 +14,8 @@ abstract public class NwkClient : NwkSystemBase
   static public NwkClient nwkClient;
   static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
 
+  static public int getParsedNwkUid() => int.Parse(nwkUid);
+
   int port = 9999;
   string ip = "localhost";
   
