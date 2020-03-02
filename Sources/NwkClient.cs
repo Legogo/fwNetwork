@@ -13,6 +13,7 @@ abstract public class NwkClient : NwkSystemBase
 {
   static public NwkClient nwkClient;
   static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
+  static public bool isConnected() => getParsedNwkUid() > -1;
 
   static public int getParsedNwkUid()
   {
