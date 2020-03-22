@@ -97,7 +97,8 @@ abstract public class NwkServer : NwkSystemBase
     sendServer.sendServerToClientTransaction(outgoingMessage, clientConnectionMessage.conn.connectionId, delegate (NwkMessage clientMsg)
     {
       log("received uid from client " + clientMsg.senderUid);
-      addClient(clientMsg.senderUid);
+      
+      addClient(clientMsg.senderUid); // server ref new client in list
 
       //broadcast to all
       NwkMessage msg = new NwkMessage();
@@ -113,16 +114,43 @@ abstract public class NwkServer : NwkSystemBase
     log("asking to new client its uid");
     log(outgoingMessage.toString());
 
+    //NwkUiView nView = qh.gc<NwkUiView>();
+    //if (nView != null) nView.onConnection();
   }
   
   void OnClientDisconnected(NetworkMessage netMessage)
   {
     log("OnClientDisconnected");
 
+    //NwkUiView nView = qh.gc<NwkUiView>();
+    //if (nView != null) nView.onDisconnection();
+
     broadcastDisconnectionPing();
   }
 
-  virtual protected void onDisconnection(int uid) { }
+  protected override void updateNetwork()
+  {
+    base.updateNetwork();
+
+    //check for stuff in clients
+
+    float dlt;
+    for (int i = 0; i < clientDatas.Count; i++)
+    {
+      if (clientDatas[i].isDisconnected()) continue;
+
+      dlt = clientDatas[i].getPingValue();
+      //log(dlt + " / " + Time.realtimeSinceStartup);
+      
+      dlt = Mathf.FloorToInt(Time.realtimeSinceStartup - dlt);
+
+      if(dlt > 10f)
+      {
+        log(clientDatas[i].uid + " timeout ! " + dlt);
+        clientDatas[i].setAsDisconnected();
+      }
+    }
+  }
 
   void OnMessageReceived(NetworkMessage netMessage)
   {
@@ -141,6 +169,18 @@ abstract public class NwkServer : NwkSystemBase
     {
       log("server couldn't read standard NwkMesssage ; passing it on");
       return;
+    }
+
+    if(incomingMessage.messageBytes.Length > 0)
+    {
+      int msgSize = incomingMessage.messageBytes.Length * 4;
+      if (msgSize > 0)
+      {
+        if (incomingMessage.senderUid.Length > 0)
+        {
+          getClientData(incomingMessage.senderUid).msgSizes.Add(msgSize);
+        }
+      }
     }
 
     //scope is "who" need to treat the message
@@ -165,16 +205,8 @@ abstract public class NwkServer : NwkSystemBase
       return;
     }
 
-    if (!msg.silentLogs)
-    {
-      log("client # " + msg.senderUid);
-      log(msg.toString());
-
-      if(senderConnectionId != int.Parse(msg.senderUid))
-      {
-        log("!> sender differ ?");
-      }
-    }
+    log("client # " + msg.senderUid, msg.silentLogs);
+    log(msg.toString(), msg.silentLogs);
 
     //typ must be nulled (using none) to stop propagation
 
@@ -183,16 +215,17 @@ abstract public class NwkServer : NwkSystemBase
     {
       case NwkMessageType.DISCONNECTION_PONG:
 
-        log("received disconnection pong from " + msg.senderUid);
+        log("received disconnection pong from " + msg.senderUid, msg.silentLogs);
 
-        getClientData(msg.senderUid).resetTimeout();
+        //getClientData(msg.senderUid).resetTimeout();
 
         break;
       case NwkMessageType.PING:
 
-        if(!msg.silentLogs) log("received ping from " + msg.senderUid);
+        if (!msg.silentLogs) log("received ping from " + msg.senderUid, msg.silentLogs);
 
-        getClientData(msg.senderUid).ping = Time.realtimeSinceStartup;
+        //ref timestamp to solve timeout
+        pingMessage(msg.senderUid);
 
         // re-use message :shrug:
         msg.clean();
@@ -205,6 +238,11 @@ abstract public class NwkServer : NwkSystemBase
     }
 
 
+  }
+
+  void pingMessage(string senderUid)
+  {
+    getClientData(senderUid).eventPing(Time.realtimeSinceStartup);
   }
 
   void solveTransaction(NwkMessage msg)
@@ -247,25 +285,7 @@ abstract public class NwkServer : NwkSystemBase
     sendServer.broadcastServerToAll(msg, "0");
 
     //after deconnection we wait for a signal JIC
-    for (int i = 0; i < clientDatas.Count; i++)
-    {
-      clientDatas[i].startTimeout();
-    }
-    
-  }
-
-
-  private void Update()
-  {
-    updateTimeout();
-  }
-
-  void updateTimeout()
-  {
-    for (int i = 0; i < clientDatas.Count; i++)
-    {
-      clientDatas[i].updateTimeout(Time.deltaTime);
-    }
+    //for (int i = 0; i < clientDatas.Count; i++) clientDatas[i].startTimeout();
   }
 
   /// <summary>

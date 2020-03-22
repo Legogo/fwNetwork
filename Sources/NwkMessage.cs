@@ -24,7 +24,7 @@ public class NwkMessage : MessageBase
 {
   public short messageId = 1000; // nwk print (:shrug:)
   
-  public string senderUid = "-1"; // uniq id on network, server is 0
+  public string senderUid = ""; // uniq id on network, server is 0
   public int messageScope = 0; // 0 is basic msg ; all above is a specific way to discriminate
   public int messageType = 0;
   

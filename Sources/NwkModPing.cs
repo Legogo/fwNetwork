@@ -11,9 +11,9 @@ public class NwkModPing : NwkModuleClient
 
   //public Action<float> onPong;
 
-  float _pingTime;
-  float _pongTime;
-  float _lastDelta;
+  float _pingTime = 0f;
+  float _pongTime = 0f;
+  float _lastDelta = 0f;
 
   protected override void setup()
   {
@@ -64,11 +64,14 @@ public class NwkModPing : NwkModuleClient
   public int pong()
   {
     _pongTime = Time.realtimeSinceStartup;
+    if (_pingTime <= 0f) _pingTime = _pongTime;
 
     _lastDelta = _pongTime - _pingTime;
 
     int ms = getMilliSec(_lastDelta);
     //_client.log("pong = " + ms);
+
+    //owner.getClientData(NwkClient.nwkUid)
 
     return ms;
     //if(onPong != null) onPong(dlt);

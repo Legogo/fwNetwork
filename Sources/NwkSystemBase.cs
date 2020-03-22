@@ -56,6 +56,21 @@ public class NwkSystemBase : MonoBehaviour
   virtual protected void setup()
   { }
 
+  private void Update()
+  {
+    for (int i = 0; i < clientDatas.Count; i++)
+    {
+      clientDatas[i].update(this as NwkServer);
+    }
+
+    updateNetwork();
+  }
+
+  virtual protected void updateNetwork()
+  {
+
+  }
+
   protected void addClient(string newUid)
   {
     NwkClientData data = new NwkClientData();
@@ -78,9 +93,10 @@ public class NwkSystemBase : MonoBehaviour
     return clientDatas.Count;
   }
 
-  public void log(string ct)
+  public void log(string ct, bool silent = false)
   {
-    nwkUiView.addLog(ct);
+    if(!silent) nwkUiView.addLog(ct);
+    else nwkUiView.addRaw(ct);
   }
 
   public T getModule<T>() where T : NwkModule

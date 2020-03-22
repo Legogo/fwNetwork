@@ -91,16 +91,84 @@ abstract public class NwkClient : NwkSystemBase
     log("Client::OnConnected : " + message.msgType);
 
     getModule<NwkModPing>();
+
+    NwkUiView nView = qh.gc<NwkUiView>();
+    if (nView != null) nView.onConnection();
   }
 
+  /// <summary>
+  /// on other disconnection
+  /// </summary>
+  /// <param name="message"></param>
   void OnDisconnected(NetworkMessage message)
   {
     log("Client::OnDisconnected : " + message.msgType);
+
+    //NwkMessage msg = convertMessage(message);
+
+    //getClientData(nwkUid).setAsDisconnected();
+    //NwkUiView nView = qh.gc<NwkUiView>();
+    //if (nView != null) nView.onDisconnection();
   }
 
   // Message received from the server
   void OnMessageReceived(NetworkMessage netMessage)
   {
+    NwkMessage incMessage = convertMessage(netMessage);
+
+    if (incMessage == null)
+    {
+      log("client couldn't read standard NwkMesssage");
+      return;
+    }
+
+    if(!incMessage.silentLogs)
+    {
+      log("Client::OnMessageReceived");
+      log(incMessage.toString());
+    }
+
+    if (incMessage.messageScope != 0)
+    {
+      onNwkMessageScopeChange(incMessage);
+      return;
+    }
+    
+    NwkMessageType mtype = (NwkMessageType)incMessage.messageType;
+    switch (mtype)
+    {
+      case NwkMessageType.CONNECTION_PINGPONG: // server is asking for a pong
+
+        nwkUid = generateUniqNetworkId(); // client is generating its UID
+
+        addClient(nwkUid.ToString()); // localy add ref
+
+        log("this client generated network id : " + nwkUid);
+
+        NwkMessage msg = new NwkMessage();
+        msg.setSender(nwkUid);
+        msg.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
+        msg.setupMessage(nwkUid); // give local uid
+
+        msg.token = incMessage.token; // transfert token
+
+        sendClient.sendClientToServer(msg);
+
+        onNetworkLinkReady();
+        break;
+      case NwkMessageType.PONG:
+
+        //inject pong delta
+        getClientData(NwkClient.nwkUid).eventPing(getModule<NwkModPing>().pong());
+
+        break;
+    }
+
+  }
+
+  NwkMessage convertMessage(NetworkMessage netMessage)
+  {
+
     // You can send any object that inherence from MessageBase
     // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
     // The first thing we do is deserialize the message to our custom type
@@ -115,53 +183,7 @@ abstract public class NwkClient : NwkSystemBase
       incomingMessage = null;
     }
 
-    if(incomingMessage == null)
-    {
-      log("client couldn't read standard NwkMesssage");
-      return;
-    }
-
-    if(!incomingMessage.silentLogs)
-    {
-      log("Client::OnMessageReceived");
-      log(incomingMessage.toString());
-    }
-
-    if (incomingMessage.messageScope != 0)
-    {
-      onNwkMessageScopeChange(incomingMessage);
-      return;
-    }
-    
-    NwkMessageType mtype = (NwkMessageType)incomingMessage.messageType;
-    switch (mtype)
-    {
-      case NwkMessageType.CONNECTION_PINGPONG: // server is asking for a pong
-
-        nwkUid = generateUniqNetworkId();
-
-        addClient(nwkUid.ToString());
-
-        log("this client generated network id : " + nwkUid);
-
-        NwkMessage msg = new NwkMessage();
-        msg.setSender(nwkUid);
-        msg.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
-        msg.setupMessage(nwkUid); // give local uid
-
-        msg.token = incomingMessage.token; // transfert token
-
-        sendClient.sendClientToServer(msg);
-
-        onNetworkLinkReady();
-        break;
-      case NwkMessageType.PONG:
-
-        getClientData(nwkUid).ping = getModule<NwkModPing>().pong();
-
-        break;
-    }
-
+    return incomingMessage;
   }
 
   /// <summary>
