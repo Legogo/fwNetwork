@@ -15,7 +15,6 @@ public class NwkUiView : MonoBehaviour
     txtLogs.text = "";
     txtClients.text = "";
 
-    refreshClientList(new List<NwkClientData>());
   }
 
   public void setLabel(string newLabel)
@@ -23,13 +22,26 @@ public class NwkUiView : MonoBehaviour
     txtLabel.text = newLabel;
   }
 
-  public void refreshClientList(List<NwkClientData> clients)
+  private void Update()
   {
-    string ct = "clients x"+ clients.Count;
-    for (int i = 0; i < clients.Count; i++)
+    refreshClientList();
+  }
+
+  void refreshClientList()
+  {
+    List<NwkClientData> datas = NwkSystemBase.nwkSys.clientDatas;
+
+    string ct = "clients x"+ datas.Count;
+
+    for (int i = 0; i < datas.Count; i++)
     {
-      ct += "\n #" + clients[i].uid+" ("+clients[i].state+")";
-      if(clients[i].timeout > 0f) ct += "\n  "+clients[i].timeout;
+      ct += "\n #" + datas[i].uid+"\t"+ datas[i].state+")";
+      if(datas[i].timeout > 0f) ct += "\n  "+ datas[i].timeout;
+
+      float ping = datas[i].ping; // default is client ping
+      if (NwkSystemBase.isServer()) ping = NwkModPing.getMilliSec(Time.realtimeSinceStartup - ping); // server is last seen time
+      
+      ct += "\n ping " + ping;
     }
 
     txtClients.text = ct;
@@ -44,7 +56,9 @@ public class NwkUiView : MonoBehaviour
 
     //add on top
     ct += txtLogs.text;
-
     txtLogs.text = ct;
+
+    //add on bottom
+    //txtLogs.text += ct;
   }
 }

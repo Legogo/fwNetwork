@@ -12,7 +12,8 @@ public enum NwkMessageType {
   CONNECTION, // a new client is connected (on clients) ; msg contains uid
   CONNECTION_PINGPONG, // server <-> client transaction on new client connection
   DISCONNECTION_PING, DISCONNECTION_PONG,
-  ASSIGN_ID
+  ASSIGN_ID,
+  PING,PONG
 };
 
 /// <summary>
@@ -30,9 +31,20 @@ public class NwkMessage : MessageBase
   public string messageHeader = ""; // the actual message
   public byte[] messageBytes;
 
-  public int token = -1; // transaction token (not needed for one way transaction)
-  public bool silent = false; // no logs
+  public int token = -1; // transaction token (not needed for one way transaction) ; ONLY WORKS for scope of 0
+  public bool silentLogs = false; // no logs
 
+  public NwkMessage clean()
+  {
+    senderUid = "-1";
+    messageScope = 0;
+    messageType = 0;
+    messageHeader = "";
+    messageBytes = null;
+    token = -1;
+    silentLogs = false;
+    return this;
+  }
 
   public void setSender(string senderUid) => this.senderUid = senderUid;
   public void setScope(int newScope) => messageScope = newScope;
@@ -51,6 +63,8 @@ public class NwkMessage : MessageBase
   {
     if (token > -1) return;
     token = Random.Range(0, 9999);
+
+    if (messageScope > 0) Debug.LogError("can't use transaction for scopes != 0");
   }
 
   /// <summary>

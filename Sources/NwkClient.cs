@@ -20,9 +20,7 @@ abstract public class NwkClient : NwkSystemBase
     return int.Parse(nwkUid);
   }
 
-  // The network client
   public NetworkClient client;
-
   public NwkSendWrapper sendClient;
 
   protected override void Awake()
@@ -38,6 +36,8 @@ abstract public class NwkClient : NwkSystemBase
 
   void CreateClient()
   {
+    Debug.Log("NwkClient creating client");
+
     var config = new ConnectionConfig();
 
     // Config the Channels we will use
@@ -51,13 +51,28 @@ abstract public class NwkClient : NwkSystemBase
     // Register the handlers for the different network messages
     RegisterHandlers();
 
-    
+    if(!useLobbySystem())
+    {
+      log("this client is flagged without lobby, attemping connection ...");
+      connectToIpPort(); // localhost
+    }
   }
 
+  /// <summary>
+  /// without a lobby system client will connect on its own
+  /// </summary>
+  /// <returns></returns>
+  abstract protected bool useLobbySystem();
+
+  /// <summary>
+  /// called by lobby
+  /// </summary>
   public void connectToIpPort(string ip = "localhost", int port = 9999)
   {
     // Connect to the server
     client.Connect(ip, port);
+
+    log(" ... client is connecting to : "+ip+":"+port);
 
     sendClient = new NwkSendWrapper();
   }
@@ -74,6 +89,8 @@ abstract public class NwkClient : NwkSystemBase
   void OnConnected(NetworkMessage message)
   {
     log("Client::OnConnected : " + message.msgType);
+
+    getModule<NwkModPing>();
   }
 
   void OnDisconnected(NetworkMessage message)
@@ -104,7 +121,7 @@ abstract public class NwkClient : NwkSystemBase
       return;
     }
 
-    if(!incomingMessage.silent)
+    if(!incomingMessage.silentLogs)
     {
       log("Client::OnMessageReceived");
       log(incomingMessage.toString());
@@ -137,6 +154,11 @@ abstract public class NwkClient : NwkSystemBase
         sendClient.sendClientToServer(msg);
 
         onNetworkLinkReady();
+        break;
+      case NwkMessageType.PONG:
+
+        getClientData(nwkUid).ping = getModule<NwkModPing>().pong();
+
         break;
     }
 
