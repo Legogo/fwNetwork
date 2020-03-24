@@ -50,7 +50,7 @@ abstract public class NwkClient : NwkSystemBase
 
     // Register the handlers for the different network messages
     RegisterHandlers();
-
+    
     if (!useLobbySystem())
     {
       log("this client is flagged without lobby, attemping connection ...");
@@ -63,7 +63,7 @@ abstract public class NwkClient : NwkSystemBase
   /// </summary>
   /// <returns></returns>
   abstract protected bool useLobbySystem();
-
+  
   virtual protected string getDefaultIpAddress() => "localhost";
 
   /// <summary>
@@ -78,7 +78,7 @@ abstract public class NwkClient : NwkSystemBase
     // Connect to the server
     client.Connect(ip, port);
 
-    log(" ... client is connecting to : " + ip + ":" + port);
+    log(" ... client is connecting to : "+ip+":"+port);
 
     sendClient = new NwkSendWrapper();
   }
@@ -127,7 +127,7 @@ abstract public class NwkClient : NwkSystemBase
       log("client couldn't read standard NwkMesssage");
       return;
     }
-
+    
     if (!incMessage.silentLogs)
     {
       log("Client::OnMessageReceived");

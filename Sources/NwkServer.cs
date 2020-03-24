@@ -97,7 +97,8 @@ abstract public class NwkServer : NwkSystemBase
     sendServer.sendServerToClientTransaction(outgoingMessage, clientConnectionMessage.conn.connectionId, delegate (NwkMessage clientMsg)
     {
       log("received uid from client " + clientMsg.senderUid);
-      addClient(clientMsg.senderUid);
+      
+      addClient(clientMsg.senderUid); // server ref new client in list
 
       //broadcast to all
       NwkMessage msg = new NwkMessage();
@@ -113,16 +114,43 @@ abstract public class NwkServer : NwkSystemBase
     log("asking to new client its uid");
     log(outgoingMessage.toString());
 
+    //NwkUiView nView = qh.gc<NwkUiView>();
+    //if (nView != null) nView.onConnection();
   }
   
   void OnClientDisconnected(NetworkMessage netMessage)
   {
     log("OnClientDisconnected");
 
+    //NwkUiView nView = qh.gc<NwkUiView>();
+    //if (nView != null) nView.onDisconnection();
+
     broadcastDisconnectionPing();
   }
 
-  virtual protected void onDisconnection(int uid) { }
+  protected override void updateNetwork()
+  {
+    base.updateNetwork();
+
+    //check for stuff in clients
+
+    float dlt;
+    for (int i = 0; i < clientDatas.Count; i++)
+    {
+      if (clientDatas[i].isDisconnected()) continue;
+
+      dlt = clientDatas[i].getPingValue();
+      //log(dlt + " / " + Time.realtimeSinceStartup);
+      
+      dlt = Mathf.FloorToInt(Time.realtimeSinceStartup - dlt);
+
+      if(dlt > 10f)
+      {
+        log(clientDatas[i].uid + " timeout ! " + dlt);
+        clientDatas[i].setAsDisconnected();
+      }
+    }
+  }
 
   void OnMessageReceived(NetworkMessage netMessage)
   {
@@ -131,7 +159,7 @@ abstract public class NwkServer : NwkSystemBase
     // You can send any object that inherence from MessageBase
     // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
     // The first thing we do is deserialize the message to our custom type
-
+    
     NwkMessage incomingMessage = null;
 
     try { incomingMessage = netMessage.ReadMessage<NwkMessage>(); }
@@ -143,38 +171,91 @@ abstract public class NwkServer : NwkSystemBase
       return;
     }
 
-
-    if(!incomingMessage.silent)
+    if(incomingMessage.messageBytes.Length > 0)
     {
-      log("client # " + incomingMessage.senderUid);
-      log(incomingMessage.toString());
+      int msgSize = incomingMessage.messageBytes.Length * 4;
+      if (msgSize > 0)
+      {
+        if (incomingMessage.senderUid.Length > 0)
+        {
+          getClientData(incomingMessage.senderUid).msgSizes.Add(msgSize);
+        }
+      }
     }
 
     //scope is "who" need to treat the message
+    //scope of 0 is default integration
+    //scope != 0 -> pass on the message to whoever is capable of solving it
     if (incomingMessage.messageScope != 0)
     {
       onNewNwkMessage(incomingMessage, netMessage.conn.connectionId);
       return;
     }
 
-    NwkMessageType typ = (NwkMessageType)incomingMessage.messageType;
+    //basic integration
+    solveBasicScope(incomingMessage, netMessage.conn.connectionId);
+    solveTransaction(incomingMessage);
+  }
+
+  void solveBasicScope(NwkMessage msg, int senderConnectionId)
+  {
+    if (msg.messageScope != 0)
+    {
+      Debug.LogError("can't treat that scope");
+      return;
+    }
+
+    log("client # " + msg.senderUid, msg.silentLogs);
+    log(msg.toString(), msg.silentLogs);
+
+    //typ must be nulled (using none) to stop propagation
+
+    NwkMessageType typ = (NwkMessageType)msg.messageType;
     switch (typ)
     {
       case NwkMessageType.DISCONNECTION_PONG:
-        log("received disconnection pong from " + incomingMessage.senderUid);
-        clients[incomingMessage.senderUid].resetTimeout();
+
+        log("received disconnection pong from " + msg.senderUid, msg.silentLogs);
+
+        //getClientData(msg.senderUid).resetTimeout();
+
+        break;
+      case NwkMessageType.PING:
+
+        if (!msg.silentLogs) log("received ping from " + msg.senderUid, msg.silentLogs);
+
+        //ref timestamp to solve timeout
+        pingMessage(msg.senderUid);
+
+        // re-use message :shrug:
+        msg.clean();
+
+        msg.silentLogs = true;
+        msg.setupNwkType(NwkMessageType.PONG); 
+        sendServer.sendServerToSpecificClient(msg, senderConnectionId);
+
         break;
     }
 
-    if (incomingMessage.isTransactionMessage())
+
+  }
+
+  void pingMessage(string senderUid)
+  {
+    getClientData(senderUid).eventPing(Time.realtimeSinceStartup);
+  }
+
+  void solveTransaction(NwkMessage msg)
+  {
+
+    if (msg.isTransactionMessage())
     {
       log(listener.getStackCount() + " transaction(s) before solving");
 
-      listener.solveReceivedMessage(incomingMessage); // check for pongs
+      listener.solveReceivedMessage(msg); // check for pongs
       log(listener.getStackCount() + " transaction(s) after solving");
       log(listener.toString());
     }
-
   }
 
   /// <summary>
@@ -185,10 +266,10 @@ abstract public class NwkServer : NwkSystemBase
 
   void broadcastDisconnectionPing()
   {
-    log("server -> broadcasting disconnection ping (clients "+clients.Count+")");
+    log("server -> broadcasting disconnection ping (clients "+clientDatas.Count+")");
 
     //error
-    if(clients.Count == 0)
+    if(clientDatas.Count == 0)
     {
       log("disconnection event but no clients recorded ?");
       return;
@@ -202,69 +283,39 @@ abstract public class NwkServer : NwkSystemBase
     msg.setupNwkType(NwkMessageType.DISCONNECTION_PING);
 
     sendServer.broadcastServerToAll(msg, "0");
-    
+
     //after deconnection we wait for a signal JIC
-    foreach (KeyValuePair<string, NwkClientData> kp in clients)
-    {
-      clients[kp.Key].startTimeout();
-    }
-    
+    //for (int i = 0; i < clientDatas.Count; i++) clientDatas[i].startTimeout();
   }
 
-
-  private void Update()
-  {
-    updateTimeout();
-  }
-
-  void updateTimeout()
-  {
-    bool somethingChanged = false;
-    foreach (KeyValuePair<string, NwkClientData> kp in clients)
-    {
-      float time = clients[kp.Key].timeout;
-      if(time > 0f)
-      {
-        float next = time - Time.deltaTime;
-
-        //log info on countdown int change
-        if(Mathf.FloorToInt(time) != Mathf.FloorToInt(next))
-        {
-          log("client " + kp.Key + " is timing out " + next);
-          somethingChanged = true;
-        }
-
-        //clients[kp.Key].timeout = next;
-        kp.Value.timeout = next;
-
-        if(next < 0f && time > 0f)
-        {
-          kp.Value.setAsDisconnected();
-          somethingChanged = true;
-        }
-      }
-    }
-
-    if (somethingChanged) checkClientList();
-  }
-
-  void checkClientList()
+  /// <summary>
+  /// remove disconnected clients from list
+  /// </summary>
+  void cleanClientList()
   {
     List<string> keys = new List<string>();
-    foreach (KeyValuePair<string, NwkClientData> kp in clients)
+    for (int i = 0; i < clientDatas.Count; i++)
     {
-      if (kp.Value.isDisconnected())
+      if (clientDatas[i].isDisconnected())
       {
-        log("client " + kp.Key + " has timed out, removing it from clients list");
-        keys.Add(kp.Key);
+        log("client " + clientDatas[i].uid + " has timed out, removing it from clients list");
+        keys.Add(clientDatas[i].uid);
       }
     }
 
-    for (int i = 0; i < keys.Count; i++)
+    int idx = 0;
+    while(idx < clientDatas.Count)
     {
-      clients.Remove(keys[i]);
+      bool found = false;
+      for (int i = 0; i < keys.Count; i++)
+      {
+        if (clientDatas[idx].uid == keys[i])
+        {
+          clientDatas.RemoveAt(idx);
+          found = true;
+        }
+      }
+      if(!found) idx++;
     }
-
-    refreshClientList();
   }
 }

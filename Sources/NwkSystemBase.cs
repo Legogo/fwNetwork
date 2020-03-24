@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class NwkSystemBase : MonoBehaviour
 {
+  public static NwkSystemBase nwkSys;
+
   // The id we use to identify our messages and register the handler
   protected short messageID = 1000;
 
@@ -12,25 +14,32 @@ public class NwkSystemBase : MonoBehaviour
 
   NwkUiView nwkUiView;
 
-  protected Dictionary<string, NwkClientData> clients = new Dictionary<string, NwkClientData>();
+  public List<NwkClientData> clientDatas = new List<NwkClientData>();
 
   virtual protected void Awake()
   {
+    nwkSys = this;
+
     listener = NwkMessageListener.getListener();
     if (listener == null) listener = gameObject.AddComponent<NwkMessageListener>();
-
   }
   
   IEnumerator Start()
   {
-    //make sure engine as not already loaded stuff
+    //tbsure make sure engine as not already loaded stuff
     for (int i = 0; i < 10; i++) yield return null;
 
+    //Debug.Log("waiting for engine to be finished");
+
+    //wait for resource engine ?
     while (EngineManager.isLoading()) yield return null;
+
+    yield return null;
 
     EngineLoader.loadScenes(new string[] { "network-view", "resource-camera" });
 
-    Debug.Log("waiting for nwk ui view");
+    //Debug.Log("waiting for nwk ui view ...");
+
     while (nwkUiView == null)
     {
       nwkUiView = GameObject.FindObjectOfType<NwkUiView>();
@@ -47,43 +56,54 @@ public class NwkSystemBase : MonoBehaviour
   virtual protected void setup()
   { }
 
+  private void Update()
+  {
+    for (int i = 0; i < clientDatas.Count; i++)
+    {
+      clientDatas[i].update(this as NwkServer);
+    }
+
+    updateNetwork();
+  }
+
+  virtual protected void updateNetwork()
+  {
+
+  }
+
   protected void addClient(string newUid)
   {
     NwkClientData data = new NwkClientData();
     data.uid = newUid;
-
-    clients.Add(newUid, data);
-
-    refreshClientList();
+    
+    clientDatas.Add(data);
   }
 
-  public NwkClientData getClient(string uid)
+  public NwkClientData getClientData(string uid)
   {
-    foreach(KeyValuePair<string, NwkClientData> kp in clients)
+    for (int i = 0; i < clientDatas.Count; i++)
     {
-      if (kp.Key == uid) return kp.Value;
+      if (clientDatas[i].uid == uid) return clientDatas[i];
     }
     return null;
   }
 
   public int countConnectedClients()
   {
-    return clients.Keys.Count;
+    return clientDatas.Count;
   }
 
-  protected void refreshClientList()
+  public void log(string ct, bool silent = false)
   {
-    List<NwkClientData> list = new List<NwkClientData>();
-    foreach(KeyValuePair<string, NwkClientData> kp in clients)
-    {
-      list.Add(kp.Value);
-    }
-    nwkUiView.refreshClientList(list);
+    if(!silent) nwkUiView.addLog(ct);
+    else nwkUiView.addRaw(ct);
   }
 
-  public void log(string ct)
+  public T getModule<T>() where T : NwkModule
   {
-    nwkUiView.addLog(ct);
+    T cmp = GetComponent<T>();
+    if (cmp != null) return cmp;
+    return gameObject.AddComponent<T>();
   }
 
   static public bool isClient() => NwkClient.nwkClient != null;
