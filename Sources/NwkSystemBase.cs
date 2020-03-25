@@ -101,9 +101,13 @@ public class NwkSystemBase : MonoBehaviour
 
   public T getModule<T>() where T : NwkModule
   {
-    T cmp = GetComponent<T>();
+    T cmp = GetComponentInChildren<T>();
     if (cmp != null) return cmp;
-    return gameObject.AddComponent<T>();
+    
+    cmp = new GameObject("[" + typeof(T).ToString() + "]").AddComponent<T>();
+    cmp.transform.SetParent(transform);
+
+    return cmp;
   }
 
   static public bool isClient() => NwkClient.nwkClient != null;

@@ -6,7 +6,7 @@ using UnityEngine;
 /// unused for now
 /// </summary>
 
-abstract public class NwkModule : MonoBehaviour
+abstract public class NwkModule : NwkMono
 {
   protected NwkSystemBase owner;
 
