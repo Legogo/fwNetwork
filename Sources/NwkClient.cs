@@ -24,12 +24,19 @@ abstract public class NwkClient : NwkSystemBase
   protected override void Awake()
   {
     base.Awake();
+    
     nwkClient = this;
+
+    nwkUid = generateUniqNetworkId(); // client is generating its UID
   }
 
   override protected void setup()
   {
     CreateClient();
+
+    addClient(nwkUid.ToString()); // localy add ref
+
+    log("this client generated network id : " + nwkUid);
   }
 
   void CreateClient()
@@ -211,12 +218,6 @@ abstract public class NwkClient : NwkSystemBase
     {
       case NwkMessageType.CONNECTION_PINGPONG: // server is asking for a pong
 
-        nwkUid = generateUniqNetworkId(); // client is generating its UID
-
-        addClient(nwkUid.ToString()); // localy add ref
-
-        log("this client generated network id : " + nwkUid);
-
         NwkMessage msg = new NwkMessage();
         msg.setSender(nwkUid);
         msg.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
@@ -293,7 +294,9 @@ abstract public class NwkClient : NwkSystemBase
 
     if(id.Length <= 0)
     {
-      id = generateUniqId();
+      //id = generateUniqId();
+      id = SystemInfo.deviceUniqueIdentifier;
+
       PlayerPrefs.SetString("nwkid", id);
       PlayerPrefs.Save();
     }
