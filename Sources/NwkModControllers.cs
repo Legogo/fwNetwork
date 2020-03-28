@@ -75,6 +75,13 @@ public class NwkModControllers : NwkModuleClient, INwkSyncable
 
     return data;
   }
+
+  NwkSyncableData syncData;
+  public NwkSyncableData getData()
+  {
+    if (syncData == null) syncData = new NwkSyncableData(this, 1f);
+    return syncData;
+  }
 }
 
 [System.Serializable]

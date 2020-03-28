@@ -28,7 +28,7 @@ abstract public class NwkModuleClient : NwkModule
   {
     //Debug.Log(GetType() + " " + _client.client.isConnected);
 
-    if (!_client.client.isConnected) return false;
+    if (!_client.isConnected()) return false;
     return true;
   }
 

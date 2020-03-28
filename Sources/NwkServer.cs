@@ -12,7 +12,7 @@ abstract public class NwkServer : NwkSystemBase
   int port = 9999;
   int maxConnections = 10;
 
-  protected NwkSendWrapper sendServer;
+  protected NwkSendWrapperServer sendWrapper;
 
   protected override void Awake()
   {
@@ -31,39 +31,68 @@ abstract public class NwkServer : NwkSystemBase
     CreateServer(); //auto create
   }
 
+
+  public override void connect()
+  {
+    int listenPort = NetworkServer.listenPort; // config ?
+    if(listenPort == port)
+    {
+      log("already listening to port " + port +" ; asking for server creation but already created");
+      return;
+    }
+
+    CreateServer();
+  }
+
   void CreateServer()
   {
     // Register handlers for the types of messages we can receive
     RegisterHandlers();
 
-    var config = new ConnectionConfig();
+    ConnectionConfig config = new ConnectionConfig();
     // There are different types of channels you can use, check the official documentation
     config.AddChannel(QosType.ReliableFragmented);
     config.AddChannel(QosType.UnreliableFragmented);
 
     var ht = new HostTopology(config, maxConnections);
 
-    if (!NetworkServer.Configure(ht))
+    bool started = true;
+
+    if (!NetworkServer.Configure(ht)) 
     {
       log("No server created, error on the configuration definition");
-      return;
+      started = false;
     }
-    else
+
+    if(started)
     {
       // Start listening on the defined port
       if (NetworkServer.Listen(port)) log("Server created, listening on port: " + port);
-      else log("No server created, could not listen to the port: " + port);
+      else
+      {
+        log("No server created, could not listen to the port: " + port);
+        started = false;
+      }
+
     }
 
-    sendServer = new NwkSendWrapper();
+    if(!started)
+    {
+      log("server flagged as not started ?");
+      return;
+    }
 
     onServerReady();
   }
 
   virtual protected void onServerReady()
-  { }
+  {
+    log("server ready, generating send wrapper");
 
-  void OnApplicationQuit()
+    sendWrapper = new NwkSendWrapperServer();
+  }
+
+  public override void disconnect()
   {
     NetworkServer.Shutdown();
   }
@@ -94,7 +123,7 @@ abstract public class NwkServer : NwkSystemBase
     outgoingMessage.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
 
     //give message to listener system to plug a callback
-    sendServer.sendServerToClientTransaction(outgoingMessage, clientConnectionMessage.conn.connectionId, delegate (NwkMessage clientMsg)
+    sendWrapper.sendServerToClientTransaction(outgoingMessage, clientConnectionMessage.conn.connectionId, delegate (NwkMessage clientMsg)
     {
       log("received uid from client " + clientMsg.senderUid);
       
@@ -108,7 +137,7 @@ abstract public class NwkServer : NwkSystemBase
       msg.setupMessage(clientMsg.senderUid); // msg will contain new client uid
 
       //send new client UID to everybody
-      sendServer.broadcastServerToAll(msg, "0");
+      sendWrapper.broadcastServerToAll(msg, "0");
     });
 
     log("asking to new client its uid");
@@ -232,7 +261,7 @@ abstract public class NwkServer : NwkSystemBase
 
         msg.silentLogs = true;
         msg.setupNwkType(NwkMessageType.PONG); 
-        sendServer.sendServerToSpecificClient(msg, senderConnectionId);
+        sendWrapper.sendServerToSpecificClient(msg, senderConnectionId);
 
         break;
     }
@@ -282,7 +311,7 @@ abstract public class NwkServer : NwkSystemBase
     msg.setSender("0");
     msg.setupNwkType(NwkMessageType.DISCONNECTION_PING);
 
-    sendServer.broadcastServerToAll(msg, "0");
+    sendWrapper.broadcastServerToAll(msg, "0");
 
     //after deconnection we wait for a signal JIC
     //for (int i = 0; i < clientDatas.Count; i++) clientDatas[i].startTimeout();
@@ -318,4 +347,7 @@ abstract public class NwkServer : NwkSystemBase
       if(!found) idx++;
     }
   }
+
+  public override bool isConnected() => sendWrapper != null;
+
 }

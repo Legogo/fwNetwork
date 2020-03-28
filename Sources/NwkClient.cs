@@ -13,15 +13,11 @@ abstract public class NwkClient : NwkSystemBase
 {
   static public NwkClient nwkClient;
   static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
-  static public bool isConnected() => getParsedNwkUid() > -1;
+  
+  static public int getParsedNwkUid() => int.Parse(nwkUid);
 
-  static public int getParsedNwkUid()
-  {
-    return int.Parse(nwkUid);
-  }
-
-  public NetworkClient client;
-  public NwkSendWrapper sendClient;
+  public NwkSendWrapperClient sendWrapperClient;
+  NetworkClient unetClient;
 
   protected override void Awake()
   {
@@ -45,8 +41,8 @@ abstract public class NwkClient : NwkSystemBase
     config.AddChannel(QosType.UnreliableFragmented);
 
     // Create the client ant attach the configuration
-    client = new NetworkClient();
-    client.Configure(config, 1);
+    unetClient = new NetworkClient();
+    unetClient.Configure(config, 1);
 
     // Register the handlers for the different network messages
     RegisterHandlers();
@@ -54,7 +50,7 @@ abstract public class NwkClient : NwkSystemBase
     if (!useLobbySystem())
     {
       log("this client is flagged without lobby, attemping connection ...");
-      connectToIpPort(getDefaultIpAddress()); // localhost
+      connectToIpPort(getConnectionIpAddress()); // localhost
     }
   }
 
@@ -64,32 +60,61 @@ abstract public class NwkClient : NwkSystemBase
   /// <returns></returns>
   abstract protected bool useLobbySystem();
   
-  virtual protected string getDefaultIpAddress() => "localhost";
+  /// <summary>
+  /// might/must be override in children
+  /// </summary>
+  virtual protected string getConnectionIpAddress() => "localhost";
+
+  public override void connect()
+  {
+    if(isConnected())
+    {
+      log("asking for connection but already connected ?");
+      return;
+    }
+
+    Debug.Assert(unetClient != null);
+
+    connectToIpPort(getConnectionIpAddress());
+  }
 
   /// <summary>
   /// called by lobby
   /// </summary>
   public void connectToIpPort(string ip = "")
   {
-    if (ip.Length <= 0) ip = getDefaultIpAddress();
+    if (ip.Length <= 0) ip = getConnectionIpAddress();
 
     int port = 9999;
 
     // Connect to the server
-    client.Connect(ip, port);
+    unetClient.Connect(ip, port);
 
     log(" ... client is connecting to : "+ip+":"+port);
 
-    sendClient = new NwkSendWrapper();
+    sendWrapperClient = new NwkSendWrapperClient(unetClient);
   }
 
   // Register the handlers for the different message types
   void RegisterHandlers()
   {
     // Unity have different Messages types defined in MsgType
-    client.RegisterHandler(messageID, OnMessageReceived);
-    client.RegisterHandler(MsgType.Connect, OnConnected);
-    client.RegisterHandler(MsgType.Disconnect, OnDisconnected);
+    unetClient.RegisterHandler(messageID, OnMessageReceived);
+    unetClient.RegisterHandler(MsgType.Connect, OnConnected);
+    unetClient.RegisterHandler(MsgType.Disconnect, OnDisconnected);
+  }
+
+  public override void disconnect()
+  {
+    if(!isConnected())
+    {
+      log("asking for disconnection but not connected");
+      return;
+    }
+
+    Debug.Assert(unetClient != null);
+
+    unetClient.Disconnect();
   }
 
   void OnConnected(NetworkMessage message)
@@ -98,14 +123,14 @@ abstract public class NwkClient : NwkSystemBase
 
     getModule<NwkModPing>();
 
+    //update ui button visual label
     NwkUiView nView = qh.gc<NwkUiView>();
     if (nView != null) nView.onConnection();
   }
 
   /// <summary>
-  /// on other disconnection
+  /// on OTHER CLIENT(s) disconnection
   /// </summary>
-  /// <param name="message"></param>
   void OnDisconnected(NetworkMessage message)
   {
     log("Client::OnDisconnected : " + message.msgType);
@@ -158,7 +183,7 @@ abstract public class NwkClient : NwkSystemBase
 
         msg.token = incMessage.token; // transfert token
 
-        sendClient.sendClientToServer(msg);
+        sendWrapperClient.sendClientToServer(msg);
 
         onNetworkLinkReady();
         break;
@@ -197,6 +222,12 @@ abstract public class NwkClient : NwkSystemBase
   /// </summary>
   abstract protected void onNetworkLinkReady();
   abstract protected void onNwkMessageScopeChange(NwkMessage nwkMsg);
+
+  public override bool isConnected()
+  {
+    if (!unetClient.isConnected) return false;
+    return getParsedNwkUid() > -1;
+  }
 
   static public string generateUniqNetworkId()
   {

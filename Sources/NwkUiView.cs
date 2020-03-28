@@ -82,13 +82,13 @@ public class NwkUiView : MonoBehaviour
 
     NwkClient.nwkClient.log("clicked : "+btnConnect.GetComponentInChildren<Text>().text);
 
-    if (NwkClient.nwkClient.client.isConnected)
+    if (NwkClient.nwkClient.isConnected())
     {
-      NwkClient.nwkClient.client.Disconnect();
+      NwkClient.nwkClient.disconnect();
     }
     else
     {
-      NwkClient.nwkClient.connectToIpPort();
+      NwkClient.nwkClient.connectToIpPort(); // ui view button connect
     }
   }
 

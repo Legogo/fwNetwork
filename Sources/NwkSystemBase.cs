@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class NwkSystemBase : MonoBehaviour
+abstract public class NwkSystemBase : MonoBehaviour
 {
   public static NwkSystemBase nwkSys;
 
@@ -13,6 +13,7 @@ public class NwkSystemBase : MonoBehaviour
   protected NwkMessageListener listener;
 
   NwkUiView nwkUiView;
+  //protected NwkSendWrapper sendWrapper; // wrapper must be generated only when connection is active
 
   public List<NwkClientData> clientDatas = new List<NwkClientData>();
 
@@ -20,10 +21,14 @@ public class NwkSystemBase : MonoBehaviour
   {
     nwkSys = this;
 
+    //sendWrapper = generateSendWrapper();
+
     listener = NwkMessageListener.getListener();
     if (listener == null) listener = gameObject.AddComponent<NwkMessageListener>();
   }
-  
+
+  //abstract protected NwkSendWrapper generateSendWrapper();
+
   IEnumerator Start()
   {
     //tbsure make sure engine as not already loaded stuff
@@ -67,9 +72,7 @@ public class NwkSystemBase : MonoBehaviour
   }
 
   virtual protected void updateNetwork()
-  {
-
-  }
+  { }
 
   protected void addClient(string newUid)
   {
@@ -109,6 +112,15 @@ public class NwkSystemBase : MonoBehaviour
 
     return cmp;
   }
+
+  void OnApplicationQuit()
+  {
+    disconnect();
+  }
+
+  abstract public void disconnect();
+  abstract public void connect();
+  abstract public bool isConnected();
 
   static public bool isClient() => NwkClient.nwkClient != null;
   static public bool isServer() => NwkServer.nwkServer != null;

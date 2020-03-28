@@ -58,7 +58,7 @@ public class NwkModPing : NwkModuleClient
     //_client.log("ping at "+_pingTime);
 
     //_client.sendClient.sendServerToClientTransaction(msg, _client.client.connection.connectionId, pong);
-    _client.sendClient.sendClientToServer(msg);
+    _client.sendWrapperClient.sendClientToServer(msg);
   }
 
   public int pong()
