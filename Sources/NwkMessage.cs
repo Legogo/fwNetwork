@@ -10,10 +10,11 @@ using System.Runtime.Serialization.Formatters.Binary;
 public enum NwkMessageType {
   NONE, // nothing specific
   CONNECTION, // a new client is connected (on clients) ; msg contains uid
+  DISCONNECTION, // a client tells server that it will disconnect
   CONNECTION_PINGPONG, // server <-> client transaction on new client connection
-  DISCONNECTION_PING, DISCONNECTION_PONG,
+  SRV_DISCONNECTION_PING, CLT_DISCONNECTION_PONG, // server broadcast ping ; all connected client must answer pong
   ASSIGN_ID,
-  PING,PONG
+  PING,PONG // ping module
 };
 
 /// <summary>
@@ -103,6 +104,16 @@ public class NwkMessage : MessageBase
     BinaryFormatter bf = new BinaryFormatter();
 
     return bf.Deserialize(stream);
+  }
+
+  static public NwkMessage getStandardMessage(string sender, NwkMessageType msgType)
+  {
+    NwkMessage msg = new NwkMessage();
+    msg.setSender(sender);
+    msg.setScope(0);
+    msg.setupNwkType(msgType);
+    msg.silentLogs = true;
+    return msg;
   }
 
 }

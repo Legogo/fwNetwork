@@ -42,4 +42,16 @@ abstract public class NwkModule : NwkMono
 
   //abstract public void onMessage(NwkMessage msg);
 
+  /// <summary>
+  /// describe what to display on ui
+  /// returns its size
+  /// </summary>
+  virtual public void drawGui()
+  {
+    
+    //GUI.Label(new Rect(position.x + 10, position.y + 10, size.x, 20f), GetType().ToString());
+    GUILayout.Label(GetType().ToString());
+
+  }
+
 }

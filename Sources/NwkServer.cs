@@ -90,6 +90,8 @@ abstract public class NwkServer : NwkSystemBase
     log("server ready, generating send wrapper");
 
     sendWrapper = new NwkSendWrapperServer();
+
+    //nwkUiView.setLabel(GetType().ToString());
   }
 
   public override void disconnect()
@@ -242,7 +244,7 @@ abstract public class NwkServer : NwkSystemBase
     NwkMessageType typ = (NwkMessageType)msg.messageType;
     switch (typ)
     {
-      case NwkMessageType.DISCONNECTION_PONG:
+      case NwkMessageType.CLT_DISCONNECTION_PONG:
 
         log("received disconnection pong from " + msg.senderUid, msg.silentLogs);
 
@@ -262,6 +264,13 @@ abstract public class NwkServer : NwkSystemBase
         msg.silentLogs = true;
         msg.setupNwkType(NwkMessageType.PONG); 
         sendWrapper.sendServerToSpecificClient(msg, senderConnectionId);
+
+        break;
+      case NwkMessageType.DISCONNECTION:
+
+        getClientData(msg.senderUid).setAsDisconnected();
+
+        //msg.clean();
 
         break;
     }
@@ -309,7 +318,7 @@ abstract public class NwkServer : NwkSystemBase
     //and will stop timeout-ing everyclients that answers
     NwkMessage msg = new NwkMessage();
     msg.setSender("0");
-    msg.setupNwkType(NwkMessageType.DISCONNECTION_PING);
+    msg.setupNwkType(NwkMessageType.SRV_DISCONNECTION_PING);
 
     sendWrapper.broadcastServerToAll(msg, "0");
 

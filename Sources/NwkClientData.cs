@@ -83,6 +83,15 @@ public class NwkClientData
     return NwkModPing.getMilliSec(output);
   }
 
+  public void setConnected()
+  {
+    state = ClientState.CONNECTED;
+
+    ping = Time.realtimeSinceStartup; // for server side
+
+    NwkSystemBase.nwkSys.log(uid + " connected !");
+  }
+
   public void setAsDisconnected()
   {
     state = ClientState.DISCONNECTED;

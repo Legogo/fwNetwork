@@ -1,5 +1,7 @@
 ﻿using System;
 using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.Networking;
 using Random = UnityEngine.Random;
 
@@ -99,9 +101,9 @@ abstract public class NwkClient : NwkSystemBase
   void RegisterHandlers()
   {
     // Unity have different Messages types defined in MsgType
-    unetClient.RegisterHandler(messageID, OnMessageReceived);
-    unetClient.RegisterHandler(MsgType.Connect, OnConnected);
-    unetClient.RegisterHandler(MsgType.Disconnect, OnDisconnected);
+    unetClient.RegisterHandler(messageID, unetOnMessageReceived);
+    unetClient.RegisterHandler(MsgType.Connect, unetOnOtherConnected);
+    unetClient.RegisterHandler(MsgType.Disconnect, unetOnOtherDisconnected);
   }
 
   public override void disconnect()
@@ -114,24 +116,63 @@ abstract public class NwkClient : NwkSystemBase
 
     Debug.Assert(unetClient != null);
 
+    //unetClient.Disconnect();
+    //https://answers.unity.com/questions/1281928/unet-handle-client-disconnection.html
+    //https://forum.unity.com/threads/how-to-disconnect-clients-properly.393416/
+    //NetworkManager.singleton.StopClient();
+
+    log("sending server disconnection message ...");
+
+    //tell server
+    NwkMessage msg = NwkMessage.getStandardMessage(nwkUid, NwkMessageType.DISCONNECTION);
+    sendWrapperClient.sendClientToServer(msg);
+
+    //Debug.Log(unetClient.isConnected);
+
+    StopAllCoroutines(); // previous ?
+    StartCoroutine(processDisconnection());
+  }
+
+  IEnumerator processDisconnection()
+  {
+    float time = 1f;
+
+    log(" ... disconnection in " + time + " seconde(s)");
+
+    yield return new WaitForSeconds(time);
+
+    log(" ... telling unet client to disconnect");
+
     unetClient.Disconnect();
   }
 
-  void OnConnected(NetworkMessage message)
+  protected override void onStateConnected()
+  {
+    base.onStateConnected();
+
+    nwkUiView.setConnected(true);
+  }
+
+  protected override void onStateDisconnected()
+  {
+    base.onStateDisconnected();
+
+    getClientData(nwkUid).setAsDisconnected();
+
+    nwkUiView.setConnected(false);
+  }
+
+  void unetOnOtherConnected(NetworkMessage message)
   {
     log("Client::OnConnected : " + message.msgType);
 
     getModule<NwkModPing>();
-
-    //update ui button visual label
-    NwkUiView nView = qh.gc<NwkUiView>();
-    if (nView != null) nView.onConnection();
   }
 
   /// <summary>
   /// on OTHER CLIENT(s) disconnection
   /// </summary>
-  void OnDisconnected(NetworkMessage message)
+  void unetOnOtherDisconnected(NetworkMessage message)
   {
     log("Client::OnDisconnected : " + message.msgType);
 
@@ -143,7 +184,7 @@ abstract public class NwkClient : NwkSystemBase
   }
 
   // Message received from the server
-  void OnMessageReceived(NetworkMessage netMessage)
+  void unetOnMessageReceived(NetworkMessage netMessage)
   {
     NwkMessage incMessage = convertMessage(netMessage);
 
@@ -219,17 +260,51 @@ abstract public class NwkClient : NwkSystemBase
 
   /// <summary>
   /// when we are sure that server and client knows each other
+  /// reaction to a msg from server
   /// </summary>
-  abstract protected void onNetworkLinkReady();
+  virtual protected void onNetworkLinkReady()
+  {
+    nwkUiView.setLabel(GetType().ToString() + " " + nwkUid);
+
+    log("network link is ready , solved network id is "+nwkUid);
+  }
+
   abstract protected void onNwkMessageScopeChange(NwkMessage nwkMsg);
 
   public override bool isConnected()
   {
+    if (unetClient == null) return false;
     if (!unetClient.isConnected) return false;
     return getParsedNwkUid() > -1;
   }
 
+
+
+
+
+
+
+  /// <summary>
+  /// uid is stored in ppref for next launch
+  /// </summary>
   static public string generateUniqNetworkId()
+  {
+    string id = PlayerPrefs.GetString("nwkid", "");
+
+    if(id.Length <= 0)
+    {
+      id = generateUniqId();
+      PlayerPrefs.SetString("nwkid", id);
+      PlayerPrefs.Save();
+    }
+    
+    return id;
+  }
+
+  /// <summary>
+  /// generic generator
+  /// </summary>
+  static public string generateUniqId()
   {
     //solve uid
     string newUid = Random.Range(0, 999999).ToString();

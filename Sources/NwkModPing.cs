@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// module that generate ping behavior
+/// </summary>
+
 public class NwkModPing : NwkModuleClient
 {
   float pingTimer = 0f;
@@ -77,9 +81,21 @@ public class NwkModPing : NwkModuleClient
     //if(onPong != null) onPong(dlt);
   }
 
+  public int getCurrentPing() => getMilliSec(_lastDelta);
+
   static public int getMilliSec(float dlt)
   {
     int ms = Mathf.FloorToInt(dlt * 1000f);
     return ms;
+  }
+
+  public override void drawGui()
+  {
+    base.drawGui();
+
+    //GUILayout.Label(new Rect(position.x, position.y + 30, size.x, 30f), "dt : "+_lastDelta);
+    GUILayout.Label("dt : " + _lastDelta);
+    GUILayout.Label("ping : " + getCurrentPing());
+
   }
 }

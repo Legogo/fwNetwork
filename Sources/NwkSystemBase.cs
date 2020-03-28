@@ -12,10 +12,12 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   protected NwkMessageListener listener;
 
-  NwkUiView nwkUiView;
+  protected NwkUiView nwkUiView;
   //protected NwkSendWrapper sendWrapper; // wrapper must be generated only when connection is active
 
   public List<NwkClientData> clientDatas = new List<NwkClientData>();
+
+  bool _localConnectionStatus = false;
 
   virtual protected void Awake()
   {
@@ -63,12 +65,33 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   private void Update()
   {
+    //update client data info :shrug:
+    //le calcul de size / frame
     for (int i = 0; i < clientDatas.Count; i++)
     {
       clientDatas[i].update(this as NwkServer);
     }
 
+    bool _connected = isConnected();
+    if (_localConnectionStatus != _connected)
+    {
+      if (_connected) onStateConnected();
+      else onStateDisconnected();
+
+      _localConnectionStatus = _connected;
+    }
+
     updateNetwork();
+  }
+
+  virtual protected void onStateConnected()
+  {
+    if (nwkUiView != null) nwkUiView.setConnected(true);
+  }
+
+  virtual protected void onStateDisconnected()
+  {
+    if (nwkUiView != null) nwkUiView.setConnected(false);
   }
 
   virtual protected void updateNetwork()
@@ -76,10 +99,16 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   protected void addClient(string newUid)
   {
-    NwkClientData data = new NwkClientData();
-    data.uid = newUid;
-    
-    clientDatas.Add(data);
+    NwkClientData data = getClientData(newUid);
+
+    if (data == null)
+    {
+      data = new NwkClientData();
+      data.uid = newUid;
+      clientDatas.Add(data);
+    }
+
+    data.setConnected();
   }
 
   public NwkClientData getClientData(string uid)
@@ -113,8 +142,33 @@ abstract public class NwkSystemBase : MonoBehaviour
     return cmp;
   }
 
+  NwkModule[] getAllModules()
+  {
+    List<NwkModule> mods = new List<NwkModule>();
+    //mods.AddRange(transform.GetComponents<NwkModule>());
+    mods.AddRange(transform.GetComponentsInChildren<NwkModule>());
+    return mods.ToArray();
+  }
+
+  private void OnGUI()
+  {
+    NwkModule[] mods = getAllModules();
+
+    //GUILayout.BeginArea
+    GUILayout.BeginHorizontal();
+    for (int i = 0; i < mods.Length; i++)
+    {
+      GUILayout.BeginVertical(GUILayout.Width(200f));
+      mods[i].drawGui();
+      GUILayout.EndVertical();
+    }
+    GUILayout.EndHorizontal();
+
+  }
+
   void OnApplicationQuit()
   {
+    Debug.LogWarning("<color=red>APPLICATION QUIT CONNECTION KILL</color>");
     disconnect();
   }
 

@@ -122,11 +122,21 @@ public class NwkSyncer : NwkMono
   /// <summary>
   /// bridge when receiving new message
   /// </summary>
-  static public void apply(string id, NwkMessage msg)
+  static public void apply(string syncId, NwkMessage msg)
   {
+    bool found = false;
     for (int i = 0; i < instance.syncs.Count; i++)
     {
-      if (instance.syncs[i].syncUid == id) instance.syncs[i].unpackMessage(msg); // tell object to treat inc data
+      if (instance.syncs[i].syncUid == syncId)
+      {
+        instance.syncs[i].unpackMessage(msg); // tell object to treat inc data
+        found = true;
+      }
+    }
+
+    if(!found)
+    {
+      Debug.LogWarning("didn't find object with sync id : " + syncId);
     }
   }
 

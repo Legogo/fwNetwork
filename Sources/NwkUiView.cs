@@ -8,6 +8,7 @@ public class NwkUiView : MonoBehaviour
   public Text txtLabel;
   public Text txtClients;
   public Button btnConnect;
+  public Image stConnection;
 
   [Header("logs list")]
   public Text txtRaw;
@@ -47,7 +48,7 @@ public class NwkUiView : MonoBehaviour
       //STATE
       ct += "\n #" + datas[i].uid+"\t("+ datas[i].state+")";
 
-      if (datas[i].state == NwkClientData.ClientState.DISCONNECTED) continue;
+      if (datas[i].isDisconnected()) continue;
 
       //PING
 
@@ -73,16 +74,25 @@ public class NwkUiView : MonoBehaviour
 
     logs.addLog(ct);
 
-    Debug.Log(ct);
+    Debug.Log("<color=orange>nwk</color> "+ct);
+  }
+
+  public void setConnected(bool connected)
+  {
+    stConnection.color = connected ? Color.green : Color.red;
+    
+    if (!btnConnect.gameObject.activeSelf) btnConnect.gameObject.SetActive(true);
+    btnConnect.GetComponentInChildren<Text>().text = connected ? "Disconnect" : "Connect";
   }
 
   public void onConnectButtonPressed()
   {
     if (!NwkClient.isClient()) return;
 
-    NwkClient.nwkClient.log("clicked : "+btnConnect.GetComponentInChildren<Text>().text);
+    bool clientConnection = NwkClient.nwkClient.isConnected();
+    NwkClient.nwkClient.log("clicked : "+btnConnect.GetComponentInChildren<Text>().text+" / is connected ? "+clientConnection);
 
-    if (NwkClient.nwkClient.isConnected())
+    if (clientConnection)
     {
       NwkClient.nwkClient.disconnect();
     }
@@ -92,15 +102,4 @@ public class NwkUiView : MonoBehaviour
     }
   }
 
-  public void onConnection()
-  {
-    if (!btnConnect.gameObject.activeSelf) btnConnect.gameObject.SetActive(true);
-    btnConnect.GetComponentInChildren<Text>().text = "Disconnect";
-  }
-
-  public void onDisconnection()
-  {
-    if (!btnConnect.gameObject.activeSelf) btnConnect.gameObject.SetActive(true);
-    btnConnect.GetComponentInChildren<Text>().text = "Connect";
-  }
 }
