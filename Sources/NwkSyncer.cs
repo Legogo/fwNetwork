@@ -8,7 +8,7 @@ public class NwkSyncer : NwkMono
 
   //list used by client to find objects concerned by a new message
   //unpack is usually called using this list
-  public List<NwkSyncableData> syncs = new List<NwkSyncableData>();
+  public List<INwkSyncable> syncs = new List<INwkSyncable>();
 
   bool useFrequency = false;
   float stackTimerFrequency = 0.33f;
@@ -34,13 +34,19 @@ public class NwkSyncer : NwkMono
 
   private void Update()
   {
+    if(!NwkSystemBase.nwkSys.isConnected())
+    {
+      return;
+    }
 
     for (int i = 0; i < syncs.Count; i++)
     {
+      NwkSyncableData data = syncs[i].getData();
+
       //check if timer reached target (and is rebooted)
-      if(syncs[i].update(Time.deltaTime))
+      if(data.update(Time.deltaTime))
       {
-        stack.Add(syncs[i]);
+        stack.Add(data);
       }
     }
 
@@ -79,11 +85,11 @@ public class NwkSyncer : NwkMono
     stack.Clear();
   }
 
-  public bool hasSync(NwkSyncableData sync)
+  public bool hasSync(INwkSyncable sync)
   {
     for (int i = 0; i < instance.syncs.Count; i++)
     {
-      if (instance.syncs[i].handle == sync)
+      if (instance.syncs[i] == sync)
       {
         return true;
       }
@@ -91,21 +97,22 @@ public class NwkSyncer : NwkMono
     return false;
   }
 
-  public void sub(NwkSyncableData sync)
+  public void sub(INwkSyncable sync)
   {
-    
     if(hasSync(sync))
     {
       Debug.LogError("already has that sync ?");
       return;
     }
 
+    //NwkSyncableData data = sync.getData();
     syncs.Add(sync);
   }
 
-  public void unsub(NwkSyncableData sync)
+  public void unsub(INwkSyncable sync)
   {
-    if(!hasSync(sync))
+
+    if (!hasSync(sync))
     {
       Debug.LogError("don't have that sync to unsub");
       return;
@@ -114,7 +121,7 @@ public class NwkSyncer : NwkMono
     int idx = 0;
     while(idx < syncs.Count)
     {
-      if (syncs[idx].handle == sync) syncs.RemoveAt(idx);
+      if (syncs[idx] == sync) syncs.RemoveAt(idx);
       else idx++;
     }
   }
@@ -122,21 +129,26 @@ public class NwkSyncer : NwkMono
   /// <summary>
   /// bridge when receiving new message
   /// </summary>
-  static public void apply(string syncId, NwkMessage msg)
+  static public void applyMessage(NwkMessage msg)
   {
     bool found = false;
     for (int i = 0; i < instance.syncs.Count; i++)
     {
-      if (instance.syncs[i].syncUid == syncId)
+      NwkSyncableData data = instance.syncs[i].getData();
+
+      string header = msg.getHeader();
+      string[] tmp = header.Split('-');
+
+      if (data.syncUid == tmp[0])
       {
-        instance.syncs[i].unpackMessage(msg); // tell object to treat inc data
+        data.unpackMessage(msg); // tell object to treat inc data
         found = true;
       }
     }
 
     if(!found)
     {
-      Debug.LogWarning("didn't find object with sync id : " + syncId);
+      Debug.LogWarning("didn't find object with sync id : " + msg.messageHeader);
     }
   }
 
@@ -147,10 +159,14 @@ public class NwkSyncer : NwkMono
   {
     NwkMessage msg = new NwkMessage();
 
-    msg.setScope(1);
-    msg.setupMessage(syncData.syncUid);
-    msg.setupNwkType((int)RobbersNwkMessageType.sync);
+    msg.setupNwkType(NwkMessageType.SYNC);
+
+    string header = syncData.syncUid+"-"+syncData.handle.GetType();
+    msg.setupHeader(header);
+    //msg.setupMessage(syncData.syncUid);
+
     msg.setupMessageData(syncData.handle.pack());
+
     msg.silentLogs = true;
 
     return msg;

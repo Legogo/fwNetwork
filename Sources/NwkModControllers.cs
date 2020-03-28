@@ -9,6 +9,8 @@ using System.Linq;
 
 public class NwkModControllers : NwkModuleClient, INwkSyncable
 {
+  bool useUniqIds = false;
+
   //list keep uids of old controllers but track connected state
   List<NwkModClientControllers> _clientsControllers = new List<NwkModClientControllers>();
 
@@ -74,8 +76,17 @@ public class NwkModControllers : NwkModuleClient, INwkSyncable
       return;
     }
 
-    SolverControllerState control = cc.clientControllers.Select(x => x).Where(x => x.deviceId == deviceUid).FirstOrDefault();
-    control.connected = false;
+    //because controller can't be tracked by uid, need to remove
+    if(!useUniqIds)
+    {
+      cc.removeControllerOfId(deviceUid);
+    }
+    else
+    {
+      SolverControllerState control = cc.clientControllers.Select(x => x).Where(x => x.deviceId == deviceUid).FirstOrDefault();
+      control.connected = false;
+    }
+
 
     log(getStamp() + " controller " + deviceUid + " is now set as disconnected");
   }
@@ -107,9 +118,6 @@ public class NwkModControllers : NwkModuleClient, INwkSyncable
     }
   }
 
-  /// <summary>
-  /// don't need to receive data
-  /// </summary>
   public void unpack(object obj)
   {
     List<NwkModClientControllers> nwkList = (List<NwkModClientControllers>)obj;
@@ -138,7 +146,6 @@ public class NwkModControllers : NwkModuleClient, INwkSyncable
   {
     base.drawGui();
 
-    
     foreach(NwkModClientControllers cc in _clientsControllers)
     {
       string ids = "";
@@ -154,6 +161,8 @@ public class NwkModControllers : NwkModuleClient, INwkSyncable
     }
     
   }
+
+  public void subSync() => qh.gc<NwkSyncer>().sub(this);
 }
 
 [System.Serializable]

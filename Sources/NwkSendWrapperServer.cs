@@ -20,13 +20,27 @@ public class NwkSendWrapperServer : NwkSendWrapper
 
   /// <summary>
   /// SERVER
+  /// this function needs to provide the client connection id
   /// </summary>
-  /// <param name="msg"></param>
-  /// <param name="clientConnectionId"></param>
-  public void sendServerToSpecificClient(NwkMessage msg, int clientConnectionId)
+  public void sendServerAnswerToSpecificClient(NwkMessage msg, int clientConnectionId)
   {
     msg.setSender("0");
     NetworkServer.SendToClient(clientConnectionId, msg.messageId, msg);
+  }
+
+  [Obsolete("use broadcast ; can't target specific client outside of answering flow")]
+  public void sendServerToClientsBut(NwkMessage msg, string filterNwkUid)
+  {
+    msg.setSender("0"); // server
+
+    List<NwkClientData> clients = NwkServer.nwkServer.clientDatas;
+    for (int i = 0; i < clients.Count; i++)
+    {
+      if(clients[i].nwkUid != filterNwkUid)
+      {
+        //NetworkServer.SendToClient(clients[i]);
+      }
+    }
   }
 
   /// <summary>

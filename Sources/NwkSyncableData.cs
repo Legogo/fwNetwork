@@ -2,9 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// everybody can create a new sync object
+/// server will register and send to everybody else
+/// everybody must be able to recreate that object in local sim
+/// </summary>
+
 public class NwkSyncableData
 {
-  public string syncUid;
+
+  public string syncUid; // given to msg header
+
   public INwkSyncable handle;
 
   //for syncer
@@ -13,6 +21,8 @@ public class NwkSyncableData
 
   public NwkSyncableData(INwkSyncable parent, float freq)
   {
+    syncUid = NwkClient.generateUniqId();
+
     handle = parent;
     sendTimer = 0f;
     sendFrequency = freq;
@@ -30,6 +40,8 @@ public class NwkSyncableData
 
     return false;
   }
+
+  public void forceSend() => sendTimer = sendFrequency - 0.000001f; // next frame !
 
   public NwkMessage packMessage() => NwkSyncer.nwkSyncInject(this);
   public void unpackMessage(NwkMessage msg) => handle.unpack(msg.getMessage());

@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 
 /// <summary>
+/// behav for transaction flow
 /// this is a local manager meant to wait for msg answers
 /// </summary>
 public class NwkMessageListener : MonoBehaviour

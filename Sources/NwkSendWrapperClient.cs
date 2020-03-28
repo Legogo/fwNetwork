@@ -18,7 +18,16 @@ public class NwkSendWrapperClient : NwkSendWrapper
     msg.senderUid = NwkClient.nwkUid; // assign client id before sending
     unetClient.Send(msg.messageId, msg);
 
-    NwkSystemBase.nwkSys.log("sent message of type : " + msg.messageType);
+    //NwkSystemBase.nwkSys.log("sent message of type : " + msg.messageType);
   }
 
+  public void sendClientToClients(NwkMessage msg)
+  {
+    msg.senderUid = NwkClient.nwkUid; // assign client id before sending
+    msg.broadcast = true;
+
+    unetClient.Send(msg.messageId, msg);
+
+    NwkSystemBase.nwkSys.log("sent message of type : " + msg.messageType);
+  }
 }

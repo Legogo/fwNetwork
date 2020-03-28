@@ -26,8 +26,7 @@ public class NwkModPing : NwkModuleClient
     msg = new NwkMessage();
     msg.silentLogs = true; // dont log
     msg.setupNwkType(NwkMessageType.PING);
-    msg.setScope(0);
-
+    
     pingTimer = pingItv;
 
     if(pingTimer <= 0f)

@@ -17,7 +17,9 @@ public class NwkClientData
   public enum ClientState { CONNECTED, DISCONNECTED };
   public ClientState state = ClientState.CONNECTED;
 
-  public string uid;
+  public string nwkUid;
+  public int connId;
+
   float ping = 0f; // on server it shows last ping time
 
   public float sizeSeconds; // quantité de data dans le laps de temps
@@ -26,8 +28,10 @@ public class NwkClientData
   float sizesTimer = 0f;
   float sizesTime = 1f;
 
-  public NwkClientData()
+  public NwkClientData(string nwkUid)
   {
+    this.nwkUid = nwkUid;
+
     sizesTime = sizesTimer;
     msgSizes.Clear();
 
@@ -89,7 +93,7 @@ public class NwkClientData
 
     ping = Time.realtimeSinceStartup; // for server side
 
-    NwkSystemBase.nwkSys.log(uid + " connected !");
+    NwkSystemBase.nwkSys.log(nwkUid + " connected !");
   }
 
   public void setAsDisconnected()
@@ -97,7 +101,7 @@ public class NwkClientData
     state = ClientState.DISCONNECTED;
     ping = -1f;
 
-    NwkSystemBase.nwkSys.log(uid + " disconnected !");
+    NwkSystemBase.nwkSys.log(nwkUid + " disconnected !");
   }
 
   public bool isDisconnected() { return state == ClientState.DISCONNECTED; }

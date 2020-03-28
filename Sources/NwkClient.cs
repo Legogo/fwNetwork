@@ -14,8 +14,10 @@ using Random = UnityEngine.Random;
 abstract public class NwkClient : NwkSystemBase
 {
   static public NwkClient nwkClient;
-  static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
   
+  static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
+  static public int nwkConnId = -1;
+
   static public int getParsedNwkUid() => int.Parse(nwkUid);
 
   public NwkSendWrapperClient sendWrapperClient;
@@ -24,7 +26,7 @@ abstract public class NwkClient : NwkSystemBase
   protected override void Awake()
   {
     base.Awake();
-    
+
     nwkClient = this;
 
     nwkUid = generateUniqNetworkId(); // client is generating its UID
@@ -35,8 +37,6 @@ abstract public class NwkClient : NwkSystemBase
     CreateClient();
 
     addClient(nwkUid.ToString()); // localy add ref
-
-    log("this client generated network id : " + nwkUid);
   }
 
   void CreateClient()
@@ -55,12 +55,13 @@ abstract public class NwkClient : NwkSystemBase
 
     // Register the handlers for the different network messages
     RegisterHandlers();
-    
+
     if (!useLobbySystem())
     {
       log("this client is flagged without lobby, attemping connection ...");
       connectToIpPort(getConnectionIpAddress()); // localhost
     }
+
   }
 
   /// <summary>
@@ -68,7 +69,7 @@ abstract public class NwkClient : NwkSystemBase
   /// </summary>
   /// <returns></returns>
   abstract protected bool useLobbySystem();
-  
+
   /// <summary>
   /// might/must be override in children
   /// </summary>
@@ -76,7 +77,7 @@ abstract public class NwkClient : NwkSystemBase
 
   public override void connect()
   {
-    if(isConnected())
+    if (isConnected())
     {
       log("asking for connection but already connected ?");
       return;
@@ -99,7 +100,7 @@ abstract public class NwkClient : NwkSystemBase
     // Connect to the server
     unetClient.Connect(ip, port);
 
-    log(" ... client is connecting to : "+ip+":"+port);
+    log(" ... client is connecting to : " + ip + ":" + port);
 
     sendWrapperClient = new NwkSendWrapperClient(unetClient);
   }
@@ -115,7 +116,7 @@ abstract public class NwkClient : NwkSystemBase
 
   public override void disconnect()
   {
-    if(!isConnected())
+    if (!isConnected())
     {
       log("asking for disconnection but not connected");
       return;
@@ -200,34 +201,67 @@ abstract public class NwkClient : NwkSystemBase
       log("client couldn't read standard NwkMesssage");
       return;
     }
-    
+
     if (!incMessage.silentLogs)
     {
       log("Client::OnMessageReceived");
       log(incMessage.toString());
     }
 
-    if (incMessage.messageScope != 0)
+    NwkMessageScope scope = (NwkMessageScope)incMessage.messageScope;
+    switch (scope)
     {
-      onNwkMessageScopeChange(incMessage);
-      return;
+      case NwkMessageScope.BASIC: solveBasicMessage(incMessage); break;
+      case NwkMessageScope.MODS: solveModsMessage(incMessage); break;
+      case NwkMessageScope.CUSTOM: solveCustomMessage(incMessage); break;
+      default: throw new NotImplementedException();
     }
 
+  }
+
+  void solveBasicMessage(NwkMessage incMessage)
+  {
+
     NwkMessageType mtype = (NwkMessageType)incMessage.messageType;
+
     switch (mtype)
     {
-      case NwkMessageType.CONNECTION_PINGPONG: // server is asking for a pong
+      case NwkMessageType.CONNECTION:
+
+
+        string broadcastedUid = incMessage.getHeader();
+
+        if (broadcastedUid == nwkUid)
+        {
+          log("just received server acknowledgement for uid : "+broadcastedUid);
+
+          //server asked, we sent the answer ... connection ready ?
+          onNetworkLinkReady();
+
+        }
+        else
+        {
+
+          log("just received info that client uid : " + broadcastedUid + " just connected");
+
+        }
+
+        break;
+      case NwkMessageType.CONNECTION_PINGPONG: // server is asking for uid
 
         NwkMessage msg = new NwkMessage();
+        //msg.clean();
+
         msg.setSender(nwkUid);
-        msg.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
-        msg.setupMessage(nwkUid); // give local uid
+        msg.setupNwkType(NwkMessageType.CONNECTION_PINGPONG); // same type for transaction solving
+
+        string fid = nwkUid + ":" + nwkConnId;
+        msg.setupHeader(fid); // give local uid
 
         msg.token = incMessage.token; // transfert token
 
         sendWrapperClient.sendClientToServer(msg);
 
-        onNetworkLinkReady();
         break;
       case NwkMessageType.PONG:
 
@@ -235,8 +269,33 @@ abstract public class NwkClient : NwkSystemBase
         getClientData(NwkClient.nwkUid).eventPing(getModule<NwkModPing>().pong());
 
         break;
+      case NwkMessageType.SYNC:
+
+        NwkSyncer.applyMessage(incMessage);
+
+        break;
+      case NwkMessageType.NONE:
+        break;
+      default: throw new NotImplementedException();
     }
 
+  }
+
+  void solveModsMessage(NwkMessage incMessage)
+  {
+    NwkMessageMods mt = (NwkMessageMods)incMessage.messageType;
+    switch (mt)
+    {
+      case NwkMessageMods.NONE:
+        break;
+      default: throw new NotImplementedException();
+    }
+
+  }
+
+  void solveCustomMessage(NwkMessage incMessage)
+  {
+    onNwkMessageScopeChange(incMessage);
   }
 
   NwkMessage convertMessage(NetworkMessage netMessage)
@@ -265,9 +324,17 @@ abstract public class NwkClient : NwkSystemBase
   /// </summary>
   virtual protected void onNetworkLinkReady()
   {
-    nwkUiView.setLabel(GetType().ToString() + " " + nwkUid);
+    nwkConnId = unetClient.connection.connectionId;
 
-    log("network link is ready , solved network id is "+nwkUid);
+    //update local client connId
+    getClientData(nwkUid).connId = nwkConnId;
+
+    log("this client generated network id : " + nwkUid + " ; connId : " + unetClient.connection.connectionId);
+
+    string fullId = nwkUid + ":" + nwkConnId;
+    nwkUiView.setLabel(GetType().ToString() + " " + fullId);
+
+    log("network link is ready , solved network fid is : " + fullId);
   }
 
   abstract protected void onNwkMessageScopeChange(NwkMessage nwkMsg);
@@ -282,9 +349,6 @@ abstract public class NwkClient : NwkSystemBase
 
 
 
-
-
-
   /// <summary>
   /// uid is stored in ppref for next launch
   /// </summary>
@@ -292,7 +356,7 @@ abstract public class NwkClient : NwkSystemBase
   {
     string id = PlayerPrefs.GetString("nwkid", "");
 
-    if(id.Length <= 0)
+    if (id.Length <= 0)
     {
       //id = generateUniqId();
       id = SystemInfo.deviceUniqueIdentifier;
@@ -300,7 +364,7 @@ abstract public class NwkClient : NwkSystemBase
       PlayerPrefs.SetString("nwkid", id);
       PlayerPrefs.Save();
     }
-    
+
     return id;
   }
 
@@ -313,4 +377,5 @@ abstract public class NwkClient : NwkSystemBase
     string newUid = Random.Range(0, 999999).ToString();
     return newUid;
   }
+
 }

@@ -46,7 +46,7 @@ public class NwkUiView : MonoBehaviour
       //datas[i].update(); // update size timer
 
       //STATE
-      ct += "\n #" + datas[i].uid+"\t("+ datas[i].state+")";
+      ct += "\n #" + datas[i].nwkUid+"\t("+ datas[i].state+")";
 
       if (datas[i].isDisconnected()) continue;
 

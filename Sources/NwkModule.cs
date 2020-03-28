@@ -14,6 +14,11 @@ abstract public class NwkModule : NwkMono
 
   void Start()
   {
+    if(qh.gc<NwkSyncer>() == null)
+    {
+      log("<color=red>no syncer</color> ; can't sync stuff");
+    }
+
     owner = GameObject.FindObjectOfType<NwkSystemBase>();
     Debug.Assert(owner != null, "no nwk system ?");
 

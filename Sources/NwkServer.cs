@@ -35,9 +35,9 @@ abstract public class NwkServer : NwkSystemBase
   public override void connect()
   {
     int listenPort = NetworkServer.listenPort; // config ?
-    if(listenPort == port)
+    if (listenPort == port)
     {
-      log("already listening to port " + port +" ; asking for server creation but already created");
+      log("already listening to port " + port + " ; asking for server creation but already created");
       return;
     }
 
@@ -58,13 +58,13 @@ abstract public class NwkServer : NwkSystemBase
 
     bool started = true;
 
-    if (!NetworkServer.Configure(ht)) 
+    if (!NetworkServer.Configure(ht))
     {
       log("No server created, error on the configuration definition");
       started = false;
     }
 
-    if(started)
+    if (started)
     {
       // Start listening on the defined port
       if (NetworkServer.Listen(port)) log("Server created, listening on port: " + port);
@@ -76,7 +76,7 @@ abstract public class NwkServer : NwkSystemBase
 
     }
 
-    if(!started)
+    if (!started)
     {
       log("server flagged as not started ?");
       return;
@@ -120,6 +120,8 @@ abstract public class NwkServer : NwkSystemBase
   {
     log("OnClientConnected ; sending ping pong transaction");
 
+    //server prepare message to ask for uid of newly connected client
+    //to send only to new client server will use connectionId stored within origin conn message
     NwkMessage outgoingMessage = new NwkMessage();
     outgoingMessage.setSender("0");
     outgoingMessage.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
@@ -127,19 +129,25 @@ abstract public class NwkServer : NwkSystemBase
     //give message to listener system to plug a callback
     sendWrapper.sendServerToClientTransaction(outgoingMessage, clientConnectionMessage.conn.connectionId, delegate (NwkMessage clientMsg)
     {
-      log("received uid from client " + clientMsg.senderUid);
-      
-      addClient(clientMsg.senderUid); // server ref new client in list
+      // --- CALLBACK TRANSACTION
+
+      string fid = clientMsg.getHeader();
+      log("received uid from client : " + clientMsg.senderUid + " ; fid : " + fid);
+
+      addClient(clientMsg.senderUid, clientConnectionMessage.conn.connectionId); // server ref new client in list
 
       //broadcast to all
       NwkMessage msg = new NwkMessage();
       msg.setupNwkType(NwkMessageType.CONNECTION);
       msg.setSender("0");
 
-      msg.setupMessage(clientMsg.senderUid); // msg will contain new client uid
+      msg.setupHeader(clientMsg.senderUid); // msg will contain new client uid
 
       //send new client UID to everybody
       sendWrapper.broadcastServerToAll(msg, "0");
+
+      // ---
+
     });
 
     log("asking to new client its uid");
@@ -148,7 +156,7 @@ abstract public class NwkServer : NwkSystemBase
     //NwkUiView nView = qh.gc<NwkUiView>();
     //if (nView != null) nView.onConnection();
   }
-  
+
   void OnClientDisconnected(NetworkMessage netMessage)
   {
     log("OnClientDisconnected");
@@ -172,12 +180,12 @@ abstract public class NwkServer : NwkSystemBase
 
       dlt = clientDatas[i].getPingValue();
       //log(dlt + " / " + Time.realtimeSinceStartup);
-      
+
       dlt = Mathf.FloorToInt(Time.realtimeSinceStartup - dlt);
 
-      if(dlt > 10f)
+      if (dlt > 10f)
       {
-        log(clientDatas[i].uid + " timeout ! " + dlt);
+        log(clientDatas[i].nwkUid + " timeout ! " + dlt);
         clientDatas[i].setAsDisconnected();
       }
     }
@@ -190,19 +198,20 @@ abstract public class NwkServer : NwkSystemBase
     // You can send any object that inherence from MessageBase
     // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
     // The first thing we do is deserialize the message to our custom type
-    
+
     NwkMessage incomingMessage = null;
 
     try { incomingMessage = netMessage.ReadMessage<NwkMessage>(); }
     catch { incomingMessage = null; }
 
-    if(incomingMessage == null)
+    if (incomingMessage == null)
     {
       log("server couldn't read standard NwkMesssage ; passing it on");
       return;
     }
 
-    if(incomingMessage.messageBytes.Length > 0)
+    //solve size info
+    if (incomingMessage.messageBytes.Length > 0)
     {
       int msgSize = incomingMessage.messageBytes.Length * 4;
       if (msgSize > 0)
@@ -217,27 +226,28 @@ abstract public class NwkServer : NwkSystemBase
     //scope is "who" need to treat the message
     //scope of 0 is default integration
     //scope != 0 -> pass on the message to whoever is capable of solving it
-    if (incomingMessage.messageScope != 0)
+    NwkMessageScope scope = (NwkMessageScope)incomingMessage.messageScope;
+
+    switch (scope)
     {
-      onNewNwkMessage(incomingMessage, netMessage.conn.connectionId);
-      return;
+      case NwkMessageScope.BASIC:
+        solveBasicScope(incomingMessage, netMessage.conn.connectionId);
+        solveTransaction(incomingMessage);
+        break;
+      case NwkMessageScope.MODS:
+        break;
+      case NwkMessageScope.CUSTOM:
+        onNewNwkMessage(incomingMessage, netMessage.conn.connectionId);
+        break;
+      default: throw new NotImplementedException(scope.ToString());
     }
 
-    //basic integration
-    solveBasicScope(incomingMessage, netMessage.conn.connectionId);
-    solveTransaction(incomingMessage);
   }
 
   void solveBasicScope(NwkMessage msg, int senderConnectionId)
   {
-    if (msg.messageScope != 0)
-    {
-      Debug.LogError("can't treat that scope");
-      return;
-    }
-
     log("client # " + msg.senderUid, msg.silentLogs);
-    log(msg.toString(), msg.silentLogs);
+    //log(msg.toString(), msg.silentLogs);
 
     //typ must be nulled (using none) to stop propagation
 
@@ -251,7 +261,7 @@ abstract public class NwkServer : NwkSystemBase
         //getClientData(msg.senderUid).resetTimeout();
 
         break;
-      case NwkMessageType.PING:
+      case NwkMessageType.PING: // client sent ping
 
         if (!msg.silentLogs) log("received ping from " + msg.senderUid, msg.silentLogs);
 
@@ -262,8 +272,8 @@ abstract public class NwkServer : NwkSystemBase
         msg.clean();
 
         msg.silentLogs = true;
-        msg.setupNwkType(NwkMessageType.PONG); 
-        sendWrapper.sendServerToSpecificClient(msg, senderConnectionId);
+        msg.setupNwkType(NwkMessageType.PONG);
+        sendWrapper.sendServerAnswerToSpecificClient(msg, senderConnectionId);
 
         break;
       case NwkMessageType.DISCONNECTION:
@@ -273,8 +283,21 @@ abstract public class NwkServer : NwkSystemBase
         //msg.clean();
 
         break;
-    }
+      case NwkMessageType.SYNC:
 
+        //send new data to everybody
+        //also specify sender to be able to filter on the other end
+        sendWrapper.broadcastServerToAll(msg, msg.senderUid);
+
+        //sendWrapper.sendServerToSpecificClient
+
+        break;
+      case NwkMessageType.NONE: break;
+      case NwkMessageType.CONNECTION_PINGPONG:
+        //must implem for transaction of that type
+        break;
+      default: throw new NotImplementedException(typ.ToString());
+    }
 
   }
 
@@ -304,10 +327,10 @@ abstract public class NwkServer : NwkSystemBase
 
   void broadcastDisconnectionPing()
   {
-    log("server -> broadcasting disconnection ping (clients "+clientDatas.Count+")");
+    log("server -> broadcasting disconnection ping (clients " + clientDatas.Count + ")");
 
     //error
-    if(clientDatas.Count == 0)
+    if (clientDatas.Count == 0)
     {
       log("disconnection event but no clients recorded ?");
       return;
@@ -336,24 +359,24 @@ abstract public class NwkServer : NwkSystemBase
     {
       if (clientDatas[i].isDisconnected())
       {
-        log("client " + clientDatas[i].uid + " has timed out, removing it from clients list");
-        keys.Add(clientDatas[i].uid);
+        log("client " + clientDatas[i].nwkUid + " has timed out, removing it from clients list");
+        keys.Add(clientDatas[i].nwkUid);
       }
     }
 
     int idx = 0;
-    while(idx < clientDatas.Count)
+    while (idx < clientDatas.Count)
     {
       bool found = false;
       for (int i = 0; i < keys.Count; i++)
       {
-        if (clientDatas[idx].uid == keys[i])
+        if (clientDatas[idx].nwkUid == keys[i])
         {
           clientDatas.RemoveAt(idx);
           found = true;
         }
       }
-      if(!found) idx++;
+      if (!found) idx++;
     }
   }
 

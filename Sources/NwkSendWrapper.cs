@@ -7,7 +7,6 @@ using UnityEngine;
 /// </summary>
 abstract public class NwkSendWrapper
 {
-
   List<NwkMessage> stack = new List<NwkMessage>();
 
   public void add(NwkMessage msg)

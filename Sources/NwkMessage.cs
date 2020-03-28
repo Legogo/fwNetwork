@@ -7,15 +7,30 @@ using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
-public enum NwkMessageType {
+public enum NwkMessageType
+{
   NONE, // nothing specific
   CONNECTION, // a new client is connected (on clients) ; msg contains uid
   DISCONNECTION, // a client tells server that it will disconnect
   CONNECTION_PINGPONG, // server <-> client transaction on new client connection
   SRV_DISCONNECTION_PING, CLT_DISCONNECTION_PONG, // server broadcast ping ; all connected client must answer pong
   ASSIGN_ID,
-  PING,PONG // ping module
+  PING,PONG, // ping module
+  SYNC // syncables ; only for server to receive and keep track of data (NOT client <-> client)
 };
+
+public enum NwkMessageMods
+{
+  NONE
+  //CONTROLLER_UPDATE // mod controller send/receive data
+};
+
+public enum NwkMessageScope
+{
+  BASIC,
+  MODS,
+  CUSTOM
+}
 
 /// <summary>
 /// senderUID allows receiver to know who sent the message
@@ -26,7 +41,7 @@ public class NwkMessage : MessageBase
   public short messageId = 1000; // nwk print (:shrug:)
   
   public string senderUid = ""; // uniq id on network, server is 0
-  public int messageScope = 0; // 0 is basic msg ; all above is a specific way to discriminate
+  public int messageScope = 0; // 0 is basic msg ; 1 mods ; 2 custom ; all above is a specific way to discriminate
   public int messageType = 0;
   
   public string messageHeader = ""; // the actual message
@@ -34,6 +49,8 @@ public class NwkMessage : MessageBase
 
   public int token = -1; // transaction token (not needed for one way transaction) ; ONLY WORKS for scope of 0
   public bool silentLogs = false; // no logs
+
+  public bool broadcast = false; // to aim other clients (but sender)
 
   public NwkMessage clean()
   {
@@ -44,20 +61,34 @@ public class NwkMessage : MessageBase
     messageBytes = null;
     token = -1;
     silentLogs = false;
+    broadcast = false;
+
     return this;
   }
 
   public void setSender(string senderUid) => this.senderUid = senderUid;
-  public void setScope(int newScope) => messageScope = newScope;
-  public void setupNwkType(NwkMessageType typ) => messageType = (int)typ;
-  public void setupNwkType(int typ) => messageType = typ;
+
+  /// <summary>
+  /// it's better to set scope through a type setup method
+  /// </summary>
+  //public void setScope(int newScope) => messageScope = newScope;
+
+  public void setupNwkType(NwkMessageType typ) => setupNwkScopedType(NwkMessageScope.BASIC, (int)typ);
+  public void setupNwkType(NwkMessageMods typ) => setupNwkScopedType(NwkMessageScope.MODS, (int)typ);
+  public void setupNwkCustomType(int typ) => setupNwkScopedType(NwkMessageScope.CUSTOM, typ);
   
-  public void setupMessage(string header) => messageHeader = header;
-  public void setupMessageData(object obj) => messageBytes = serializeObject(obj);
-  
-  public object getMessage() => deserializeObject(messageBytes);
+  public void setupNwkScopedType(NwkMessageScope scope, int typ)
+  {
+    messageScope = (int)scope;
+    messageType = typ;
+  }
+
+  public void setupHeader(string header) => messageHeader = header;
   public string getHeader() => messageHeader;
 
+  public void setupMessageData(object obj) => messageBytes = serializeObject(obj);
+  public object getMessage() => deserializeObject(messageBytes);
+  
   public bool cmpMessageType(NwkMessageType typ) => messageType == (int)typ;
 
   public void generateToken()
@@ -110,7 +141,6 @@ public class NwkMessage : MessageBase
   {
     NwkMessage msg = new NwkMessage();
     msg.setSender(sender);
-    msg.setScope(0);
     msg.setupNwkType(msgType);
     msg.silentLogs = true;
     return msg;
