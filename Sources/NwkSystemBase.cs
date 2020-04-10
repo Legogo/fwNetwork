@@ -38,8 +38,9 @@ abstract public class NwkSystemBase : MonoBehaviour
 
     //Debug.Log("waiting for engine to be finished");
 
-    while (!appSpecificBootChecks()) yield return null;
-    
+    IEnumerator specBootSetup = appSpecificBootSetup();
+    while (specBootSetup.MoveNext()) yield return null;
+
     //Debug.Log("waiting for nwk ui view ...");
 
     while (nwkUiView == null)
@@ -55,12 +56,14 @@ abstract public class NwkSystemBase : MonoBehaviour
     setup();
   }
 
+
   /// <summary>
   /// permet dans un projet de rajouter des choses pour bloquer le lancement
   /// </summary>
   /// <returns></returns>
-  virtual protected bool appSpecificBootChecks()
+  virtual protected IEnumerator appSpecificBootSetup()
   {
+
     /*
     //wait for resource engine ?
     while (EngineManager.isLoading()) yield return null;
@@ -68,9 +71,9 @@ abstract public class NwkSystemBase : MonoBehaviour
     EngineLoader.loadScenes(new string[] { "network-view", "resource-camera" });
     */
 
-    return true;
+    yield return null;
   }
-
+  
   virtual protected void setup()
   { }
 
@@ -120,7 +123,7 @@ abstract public class NwkSystemBase : MonoBehaviour
       clientDatas.Add(data);
     }
 
-    data.setConnected();
+    //data.setConnected();
   }
 
   public NwkClientData getClientData(string uid)
@@ -139,6 +142,8 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   public void log(string ct, bool silent = false)
   {
+    if (nwkUiView == null) return;
+
     if(!silent) nwkUiView.addLog(ct);
     else nwkUiView.addRaw(ct);
   }

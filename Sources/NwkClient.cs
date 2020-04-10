@@ -6,6 +6,9 @@ using UnityEngine.Networking;
 using Random = UnityEngine.Random;
 
 /// <summary>
+/// 
+/// IP:PORT (default port is 9999)
+/// 
 /// logs to server on startup
 /// CONNECTION_PINGPONG -> will generate it's own uniqId and send it to the server
 /// 
@@ -13,6 +16,8 @@ using Random = UnityEngine.Random;
 
 abstract public class NwkClient : NwkSystemBase
 {
+  public const int defaultPort = 9999;
+
   static public NwkClient nwkClient;
   
   static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
@@ -95,7 +100,7 @@ abstract public class NwkClient : NwkSystemBase
   {
     if (ip.Length <= 0) ip = getConnectionIpAddress();
 
-    int port = 9999;
+    int port = defaultPort;
 
     // Connect to the server
     unetClient.Connect(ip, port);
@@ -157,6 +162,9 @@ abstract public class NwkClient : NwkSystemBase
   protected override void onStateConnected()
   {
     base.onStateConnected();
+
+    //ref THIS client as connected in data
+    getClientData(nwkUid).setConnected();
 
     nwkUiView.setConnected(true);
   }

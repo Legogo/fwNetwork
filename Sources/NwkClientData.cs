@@ -15,7 +15,7 @@ public class NwkClientData
   }
 
   public enum ClientState { CONNECTED, DISCONNECTED };
-  public ClientState state = ClientState.CONNECTED;
+  public ClientState state = ClientState.DISCONNECTED;
 
   public string nwkUid;
   public int connId;
@@ -93,7 +93,7 @@ public class NwkClientData
 
     ping = Time.realtimeSinceStartup; // for server side
 
-    NwkSystemBase.nwkSys.log(nwkUid + " connected !");
+    NwkSystemBase.nwkSys.log(nwkUid + " setup as connected !");
   }
 
   public void setAsDisconnected()
