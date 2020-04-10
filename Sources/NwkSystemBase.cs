@@ -38,13 +38,8 @@ abstract public class NwkSystemBase : MonoBehaviour
 
     //Debug.Log("waiting for engine to be finished");
 
-    //wait for resource engine ?
-    while (EngineManager.isLoading()) yield return null;
-
-    yield return null;
-
-    EngineLoader.loadScenes(new string[] { "network-view", "resource-camera" });
-
+    while (!appSpecificBootChecks()) yield return null;
+    
     //Debug.Log("waiting for nwk ui view ...");
 
     while (nwkUiView == null)
@@ -58,6 +53,22 @@ abstract public class NwkSystemBase : MonoBehaviour
     yield return null;
 
     setup();
+  }
+
+  /// <summary>
+  /// permet dans un projet de rajouter des choses pour bloquer le lancement
+  /// </summary>
+  /// <returns></returns>
+  virtual protected bool appSpecificBootChecks()
+  {
+    /*
+    //wait for resource engine ?
+    while (EngineManager.isLoading()) yield return null;
+    yield return null;
+    EngineLoader.loadScenes(new string[] { "network-view", "resource-camera" });
+    */
+
+    return true;
   }
 
   virtual protected void setup()

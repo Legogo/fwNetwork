@@ -14,7 +14,7 @@ abstract public class NwkModule : NwkMono
 
   void Start()
   {
-    if(qh.gc<NwkSyncer>() == null)
+    if(GameObject.FindObjectOfType<NwkSyncer>() == null)
     {
       log("<color=red>no syncer</color> ; can't sync stuff");
     }

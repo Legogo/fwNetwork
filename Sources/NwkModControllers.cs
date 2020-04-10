@@ -162,7 +162,10 @@ public class NwkModControllers : NwkModuleClient, INwkSyncable
     
   }
 
-  public void subSync() => qh.gc<NwkSyncer>().sub(this);
+  /// <summary>
+  /// pas opti
+  /// </summary>
+  public void subSync() => GameObject.FindObjectOfType<NwkSyncer>().sub(this);
 }
 
 [System.Serializable]
