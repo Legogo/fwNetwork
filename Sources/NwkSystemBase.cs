@@ -12,7 +12,7 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   protected NwkMessageListener listener;
 
-  protected NwkUiView nwkUiView;
+  protected NwkUiView uiView;
   //protected NwkSendWrapper sendWrapper; // wrapper must be generated only when connection is active
 
   public List<NwkClientData> clientDatas = new List<NwkClientData>();
@@ -43,13 +43,13 @@ abstract public class NwkSystemBase : MonoBehaviour
 
     //Debug.Log("waiting for nwk ui view ...");
 
-    while (nwkUiView == null)
+    while (uiView == null)
     {
-      nwkUiView = GameObject.FindObjectOfType<NwkUiView>();
+      uiView = GameObject.FindObjectOfType<NwkUiView>();
       yield return null;
     }
 
-    nwkUiView.setLabel(GetType().ToString());
+    uiView.setLabel(GetType().ToString());
 
     yield return null;
 
@@ -100,12 +100,12 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   virtual protected void onStateConnected()
   {
-    if (nwkUiView != null) nwkUiView.setConnected(true);
+    if (uiView != null) uiView.setConnected(true);
   }
 
   virtual protected void onStateDisconnected()
   {
-    if (nwkUiView != null) nwkUiView.setConnected(false);
+    if (uiView != null) uiView.setConnected(false);
   }
 
   virtual protected void updateNetwork()
@@ -142,10 +142,10 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   public void log(string ct, bool silent = false)
   {
-    if (nwkUiView == null) return;
+    if (uiView == null) return;
 
-    if(!silent) nwkUiView.addLog(ct);
-    else nwkUiView.addRaw(ct);
+    if(!silent) uiView.addLog(ct);
+    else uiView.addRaw(ct);
   }
 
   public T getModule<T>() where T : NwkModule

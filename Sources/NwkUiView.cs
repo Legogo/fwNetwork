@@ -5,6 +5,10 @@ using UnityEngine.UI;
 
 public class NwkUiView : MonoBehaviour
 {
+  Canvas _canvas;
+
+  public CanvasGroup groupData;
+
   public Text txtLabel;
   public Text txtClients;
   public Button btnConnect;
@@ -19,13 +23,20 @@ public class NwkUiView : MonoBehaviour
 
   private void Awake()
   {
-    txtLabel.text = "";
+    txtLabel.text = "~Type~";
     txtClients.text = "";
 
     raws = new NwkUiViewLogs(txtRaw);
     logs = new NwkUiViewLogs(txtLogs);
 
     btnConnect.gameObject.SetActive(false);
+
+    _canvas = GetComponent<Canvas>();
+  }
+
+  private void Start()
+  {
+    setConnected(false);
   }
 
   public void setLabel(string newLabel)
@@ -33,8 +44,23 @@ public class NwkUiView : MonoBehaviour
     txtLabel.text = newLabel;
   }
 
+  bool canUpdate()
+  {
+    if (NwkSystemBase.nwkSys == null) return false;
+    return true;
+  }
+
+
   void Update()
   {
+    bool allowUpdate = canUpdate();
+
+    //kill visual if can't update
+    float targetAlpha = allowUpdate ? 1f : 0f;
+    if (groupData.alpha != targetAlpha) groupData.alpha = targetAlpha;
+
+    if (!allowUpdate) return;
+
     bool _server = NwkSystemBase.isServer();
 
     List<NwkClientData> datas = NwkSystemBase.nwkSys.clientDatas;
@@ -87,7 +113,11 @@ public class NwkUiView : MonoBehaviour
 
   public void onConnectButtonPressed()
   {
-    if (!NwkClient.isClient()) return;
+    if (!NwkClient.isClient())
+    {
+      Debug.LogWarning("not on client ? can't react to that button");
+      return;
+    }
 
     bool clientConnection = NwkClient.nwkClient.isConnected();
     NwkClient.nwkClient.log("clicked : "+btnConnect.GetComponentInChildren<Text>().text+" / is connected ? "+clientConnection);

@@ -35,6 +35,8 @@ abstract public class NwkClient : NwkSystemBase
     nwkClient = this;
 
     nwkUid = generateUniqNetworkId(); // client is generating its UID
+
+    uiView?.setConnected(false);
   }
 
   override protected void setup()
@@ -166,7 +168,7 @@ abstract public class NwkClient : NwkSystemBase
     //ref THIS client as connected in data
     getClientData(nwkUid).setConnected();
 
-    nwkUiView.setConnected(true);
+    uiView.setConnected(true);
   }
 
   protected override void onStateDisconnected()
@@ -175,7 +177,7 @@ abstract public class NwkClient : NwkSystemBase
 
     getClientData(nwkUid).setAsDisconnected();
 
-    nwkUiView.setConnected(false);
+    uiView.setConnected(false);
   }
 
   void unetOnOtherConnected(NetworkMessage message)
@@ -340,7 +342,7 @@ abstract public class NwkClient : NwkSystemBase
     log("this client generated network id : " + nwkUid + " ; connId : " + unetClient.connection.connectionId);
 
     string fullId = nwkUid + ":" + nwkConnId;
-    nwkUiView.setLabel(GetType().ToString() + " " + fullId);
+    uiView.setLabel(GetType().ToString() + " " + fullId);
 
     log("network link is ready , solved network fid is : " + fullId);
   }
