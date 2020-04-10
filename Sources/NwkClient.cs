@@ -271,7 +271,7 @@ abstract public class NwkClient : NwkSystemBase
         break;
       case NwkMessageType.SYNC:
 
-        NwkSyncer.applyMessage(incMessage);
+        NwkSyncer.instance.applyMessage(incMessage);
 
         break;
       case NwkMessageType.NONE:

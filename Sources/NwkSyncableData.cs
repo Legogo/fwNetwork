@@ -10,7 +10,7 @@ using UnityEngine;
 
 public class NwkSyncableData
 {
-
+  public string syncNwkUid; // owner uid
   public string syncUid; // given to msg header
 
   public INwkSyncable handle;

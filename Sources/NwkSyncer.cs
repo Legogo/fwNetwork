@@ -2,19 +2,29 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// bridge entre client <-> server et les INwkSyncable(s)
+/// 
+/// chaque entité a la liste complète des objets qui se sync
+/// - soit le client est a l'origine de l'objet
+/// - soit il en attend les informations par le server
+/// 
+/// </summary>
+
 public class NwkSyncer : NwkMono
 {
-  static protected NwkSyncer instance;
+  static public NwkSyncer instance;
+
+  List<NwkSyncableData> stack = new List<NwkSyncableData>();
 
   //list used by client to find objects concerned by a new message
   //unpack is usually called using this list
   public List<INwkSyncable> syncs = new List<INwkSyncable>();
 
+  //deprecated
   bool useFrequency = false;
   float stackTimerFrequency = 0.33f;
   float stackTimer = 0f;
-
-  List<NwkSyncableData> stack = new List<NwkSyncableData>();
 
   override protected void Awake()
   {
@@ -28,7 +38,8 @@ public class NwkSyncer : NwkMono
   {
     if (nwkServer != null)
     {
-      enabled = false;
+      GameObject.DestroyImmediate(this);
+      //enabled = false;
     }
   }
 
@@ -126,15 +137,18 @@ public class NwkSyncer : NwkMono
     }
   }
 
+
+
+
   /// <summary>
   /// bridge when receiving new message
   /// </summary>
-  static public void applyMessage(NwkMessage msg)
+  public void applyMessage(NwkMessage msg)
   {
     bool found = false;
-    for (int i = 0; i < instance.syncs.Count; i++)
+    for (int i = 0; i < syncs.Count; i++)
     {
-      NwkSyncableData data = instance.syncs[i].getData();
+      NwkSyncableData data = syncs[i].getData();
 
       string header = msg.getHeader();
       string[] tmp = header.Split('-');
@@ -151,6 +165,17 @@ public class NwkSyncer : NwkMono
       Debug.LogWarning("didn't find object with sync id : " + msg.messageHeader);
     }
   }
+
+  bool hasObjectOfSyncUid(string syncUid)
+  {
+    for (int i = 0; i < syncs.Count; i++)
+    {
+      if (syncs[i].getData().syncUid == syncUid) return true;
+    }
+    return false;
+  }
+
+
 
   /// <summary>
   /// basic message for sync
