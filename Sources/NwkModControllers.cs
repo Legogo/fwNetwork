@@ -183,3 +183,10 @@ public class NwkModClientControllers
     return clientControllers.Count > 0;
   }
 }
+
+[System.Serializable]
+public class SolverControllerState
+{
+  public int deviceId;
+  public bool connected; // can't track uniq id of controller : this field is now deprecated/ignored
+}
