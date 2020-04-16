@@ -15,13 +15,14 @@ public class NwkSyncer : NwkMono
 {
   static public NwkSyncer instance;
 
-  List<NwkSyncableData> stack = new List<NwkSyncableData>();
+  List<NwkMessage> stack = new List<NwkMessage>();
+  List<NwkSyncableData> syncs = new List<NwkSyncableData>();
 
   //list used by client to find objects concerned by a new message
   //unpack is usually called using this list
-  public List<INwkSyncable> syncs = new List<INwkSyncable>();
+  //public List<INwkSyncable> syncs = new List<INwkSyncable>();
 
-  //deprecated
+  //is syncer waiting before sending a stack of message ?
   bool useFrequency = false;
   float stackTimerFrequency = 0.33f;
   float stackTimer = 0f;
@@ -50,18 +51,23 @@ public class NwkSyncer : NwkMono
       return;
     }
 
+    //Debug.Log("has " + syncs.Count + " sync(s) & "+stack.Count+" msg(s)");
+
     for (int i = 0; i < syncs.Count; i++)
     {
-      NwkSyncableData data = syncs[i].getData();
+      //NwkSyncableData data = syncs[i].getData();
+      NwkSyncableData data = syncs[i];
 
       //check if timer reached target (and is rebooted)
-      if(data.update(Time.deltaTime))
+      if (data.updateFreqTimer(Time.deltaTime))
       {
-        stack.Add(data);
+        stack.Add(data.packMessage());
+        data.resetFreqTimer();
       }
     }
 
-    if(useFrequency)
+    
+    if (useFrequency) //wait before sending all stored messages
     {
       if (stackTimer < stackTimerFrequency)
       {
@@ -72,7 +78,7 @@ public class NwkSyncer : NwkMono
         }
       }
     }
-    else
+    else //send all stored messages whenever there is one
     {
       sendStack();
     }
@@ -90,7 +96,7 @@ public class NwkSyncer : NwkMono
 
     for (int i = 0; i < stack.Count; i++)
     {
-      nwkClient.sendWrapperClient.sendClientToServer(stack[i].packMessage());
+      nwkClient.sendWrapperClient.sendClientToServer(stack[i]);
     }
 
     stack.Clear();
@@ -98,9 +104,9 @@ public class NwkSyncer : NwkMono
 
   public bool hasSync(INwkSyncable sync)
   {
-    for (int i = 0; i < instance.syncs.Count; i++)
+    for (int i = 0; i < syncs.Count; i++)
     {
-      if (instance.syncs[i] == sync)
+      if (syncs[i].handle == sync)
       {
         return true;
       }
@@ -117,7 +123,7 @@ public class NwkSyncer : NwkMono
     }
 
     //NwkSyncableData data = sync.getData();
-    syncs.Add(sync);
+    syncs.Add(sync.getData());
   }
 
   public void unsub(INwkSyncable sync)
@@ -132,7 +138,7 @@ public class NwkSyncer : NwkMono
     int idx = 0;
     while(idx < syncs.Count)
     {
-      if (syncs[idx] == sync) syncs.RemoveAt(idx);
+      if (syncs[idx].handle == sync) stack.RemoveAt(idx);
       else idx++;
     }
   }
@@ -146,9 +152,9 @@ public class NwkSyncer : NwkMono
   public void applyMessage(NwkMessage msg)
   {
     bool found = false;
-    for (int i = 0; i < syncs.Count; i++)
+    for (int i = 0; i < stack.Count; i++)
     {
-      NwkSyncableData data = syncs[i].getData();
+      NwkSyncableData data = syncs[i];
 
       string header = msg.getHeader();
       string[] tmp = header.Split('-');
@@ -168,9 +174,9 @@ public class NwkSyncer : NwkMono
 
   bool hasObjectOfSyncUid(string syncUid)
   {
-    for (int i = 0; i < syncs.Count; i++)
+    for (int i = 0; i < stack.Count; i++)
     {
-      if (syncs[i].getData().syncUid == syncUid) return true;
+      if (syncs[i].syncUid == syncUid) return true;
     }
     return false;
   }

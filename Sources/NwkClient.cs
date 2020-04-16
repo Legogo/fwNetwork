@@ -152,7 +152,7 @@ abstract public class NwkClient : NwkSystemBase
     //https://forum.unity.com/threads/how-to-disconnect-clients-properly.393416/
     //NetworkManager.singleton.StopClient();
 
-    log("sending server disconnection message ...");
+    log("this client is <b>sending disconnection message</b> to server ...");
 
     //tell server
     NwkMessage msg = NwkMessage.getStandardMessage(nwkUid, NwkMessageType.DISCONNECTION);
@@ -170,11 +170,13 @@ abstract public class NwkClient : NwkSystemBase
   {
     float time = 1f;
 
-    log(" ... disconnection in " + time + " seconde(s)");
+    log("this client is processing disconnection");
+    log("  L disconnection in " + time + " secondes");
 
+    //laisser le temps au server de recevoir le message ? :shrug:
     yield return new WaitForSeconds(time);
 
-    log(" ... telling unet client to disconnect");
+    log("  L telling sysClient to disconnect");
 
     unetClient.Disconnect();
   }

@@ -15,33 +15,40 @@ public class NwkSyncableData
 
   public INwkSyncable handle;
 
-  //for syncer
-  float sendTimer;
-  float sendFrequency;
+  //for syncer to work with
+  float _sendTimer; // local timer
+  float _sendFrequency; // time interval to send pack to server
 
   public NwkSyncableData(INwkSyncable parent, float freq)
   {
     syncUid = NwkClient.generateUniqId();
 
     handle = parent;
-    sendTimer = 0f;
-    sendFrequency = freq;
+
+    _sendTimer = 0f;
+    _sendFrequency = freq;
+
+    //GameObject.FindObjectOfType<NwkSyncer>().sub(parent);
   }
 
-  public bool update(float dt)
-  {
-    sendTimer += dt;
+  //public float 
 
-    if (sendTimer > sendFrequency)
+  public bool updateFreqTimer(float dt)
+  {
+    _sendTimer += dt;
+
+    if (_sendTimer > _sendFrequency)
     {
-      sendTimer = 0f;
+      _sendTimer = 0f;
       return true;
     }
 
     return false;
   }
 
-  public void forceSend() => sendTimer = sendFrequency - 0.000001f; // next frame !
+  public void resetFreqTimer() => _sendTimer = 0f;
+
+  public void forceSend() => _sendTimer = _sendFrequency - 0.000001f; // next frame !
 
   public NwkMessage packMessage() => NwkSyncer.nwkSyncInject(this);
   public void unpackMessage(NwkMessage msg) => handle.unpack(msg.getMessage());

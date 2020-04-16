@@ -6,6 +6,8 @@ using System;
 /// <summary>
 /// behav for transaction flow
 /// this is a local manager meant to wait for msg answers
+/// 
+/// manager pour le délire de transaction server<->client
 /// </summary>
 public class NwkMessageListener : MonoBehaviour
 {

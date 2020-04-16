@@ -17,7 +17,10 @@ public interface INwkSyncable
   //sync data (timer, id, ...)
   NwkSyncableData getData();
 
-  //must sub to NwkSyncer
+  /// <summary>
+  /// this method explains how to sub to syncer
+  /// and MUST be called by hand on object boot whenver the sync must start
+  /// </summary>
   void subSync();
 
 }
