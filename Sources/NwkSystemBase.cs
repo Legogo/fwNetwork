@@ -12,12 +12,14 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   protected NwkMessageListener listener;
 
+  public bool useUiView = false;
   protected NwkUiView uiView;
   //protected NwkSendWrapper sendWrapper; // wrapper must be generated only when connection is active
 
   public List<NwkClientData> clientDatas = new List<NwkClientData>();
 
   bool _localConnectionStatus = false;
+
 
   virtual protected void Awake()
   {
@@ -43,19 +45,24 @@ abstract public class NwkSystemBase : MonoBehaviour
 
     //Debug.Log("waiting for nwk ui view ...");
 
-    while (uiView == null)
+    if(useUiView)
     {
-      uiView = GameObject.FindObjectOfType<NwkUiView>();
-      yield return null;
-    }
+      Debug.Log("loading debug ui view");
 
-    uiView.setLabel(GetType().ToString());
+      AsyncOperation async = NwkUnityTools.loadScene("network-view");
+      
+      while(!async.isDone) yield return null;
+      
+      uiView = GameObject.FindObjectOfType<NwkUiView>();
+      uiView.setLabel(GetType().ToString());
+
+      //Debug.Log(uiView);
+    }
 
     yield return null;
 
     setup();
   }
-
 
   /// <summary>
   /// permet dans un projet de rajouter des choses pour bloquer le lancement

@@ -41,6 +41,8 @@ abstract public class NwkClient : NwkSystemBase
 
   override protected void setup()
   {
+    base.setup();
+
     CreateClient();
 
     addClient(nwkUid.ToString()); // localy add ref
@@ -144,10 +146,12 @@ abstract public class NwkClient : NwkSystemBase
 
     //Debug.Log(unetClient.isConnected);
 
-    StopAllCoroutines(); // previous ?
-    StartCoroutine(processDisconnection());
+    //StopAllCoroutines(); // previous ?
+    if (coproDisco != null) StopCoroutine(coproDisco);
+    coproDisco = StartCoroutine(processDisconnection());
   }
 
+  Coroutine coproDisco = null;
   IEnumerator processDisconnection()
   {
     float time = 1f;

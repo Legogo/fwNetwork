@@ -7,7 +7,7 @@ using System.Linq;
 /// module meant to sync plugged controller info
 /// </summary>
 
-public class NwkModControllers : NwkModuleClient, INwkSyncable
+public class NwkModControllers : NwkModule, INwkSyncable
 {
   bool useUniqIds = false;
 
@@ -166,6 +166,11 @@ public class NwkModControllers : NwkModuleClient, INwkSyncable
   /// pas opti
   /// </summary>
   public void subSync() => GameObject.FindObjectOfType<NwkSyncer>().sub(this);
+
+  protected override bool canUpdate()
+  {
+    throw new System.NotImplementedException();
+  }
 }
 
 [System.Serializable]

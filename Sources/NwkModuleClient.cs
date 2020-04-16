@@ -18,7 +18,7 @@ abstract public class NwkModuleClient : NwkModule
 
     if(_client == null)
     {
-      Debug.LogError("can't create a " + GetType() + " for non client setup");
+      Debug.LogWarning("can't create a " + GetType() + " for non client setup");
       Debug.Log(owner);
       GameObject.Destroy(this);
     }
