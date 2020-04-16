@@ -64,9 +64,9 @@ public class NwkSyncer : NwkMono
         stack.Add(data.packMessage());
         data.resetFreqTimer();
       }
+      //else Debug.Log(data.handle+" => "+data.getRemainingTime());
     }
 
-    
     if (useFrequency) //wait before sending all stored messages
     {
       if (stackTimer < stackTimerFrequency)

@@ -46,6 +46,8 @@ public class NwkSyncableData
     return false;
   }
 
+  public float getRemainingTime() => _sendFrequency - _sendTimer;
+
   public void resetFreqTimer() => _sendTimer = 0f;
 
   public void forceSend() => _sendTimer = _sendFrequency - 0.000001f; // next frame !

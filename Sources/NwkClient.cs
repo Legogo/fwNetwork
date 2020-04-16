@@ -301,7 +301,10 @@ abstract public class NwkClient : NwkSystemBase
         break;
       case NwkMessageType.SYNC:
 
-        NwkSyncer.instance.applyMessage(incMessage);
+        if(incMessage.senderUid != NwkClient.nwkUid)
+        {
+          NwkSyncer.instance.applyMessage(incMessage);
+        }
 
         break;
       case NwkMessageType.NONE:
@@ -393,7 +396,7 @@ abstract public class NwkClient : NwkSystemBase
     if (id.Length <= 0)
     {
       //id = generateUniqId();
-      id = SystemInfo.deviceUniqueIdentifier;
+      id = SystemInfo.deviceUniqueIdentifier+"_"+Random.Range(0,999);
 
       PlayerPrefs.SetString("nwkid", id);
       PlayerPrefs.Save();

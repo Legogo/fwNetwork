@@ -51,7 +51,10 @@ abstract public class NwkSystemBase : MonoBehaviour
 
       AsyncOperation async = NwkUnityTools.loadScene("network-view");
       
-      while(!async.isDone) yield return null;
+      if(async != null)
+      {
+        while (!async.isDone) yield return null;
+      }
       
       uiView = GameObject.FindObjectOfType<NwkUiView>();
       uiView.setLabel(GetType().ToString());

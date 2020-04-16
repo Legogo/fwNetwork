@@ -137,7 +137,7 @@ public class NwkModControllers : NwkModule, INwkSyncable
   NwkSyncableData syncData;
   public NwkSyncableData getData()
   {
-    if (syncData == null) syncData = new NwkSyncableData(this, 1f);
+    if (syncData == null) syncData = new NwkSyncableData(this, 1f); // mod controller
     return syncData;
   }
 
