@@ -23,7 +23,21 @@ abstract public class NwkClient : NwkSystemBase
   static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
   static public int nwkConnId = -1;
 
-  static public int getParsedNwkUid() => int.Parse(nwkUid);
+  /*
+  static public int getParsedNwkUid()
+  {
+    try
+    {
+      return int.Parse(nwkUid);
+    }
+    catch(Exception e)
+    {
+      Debug.Log("can't parse : " + nwkUid);
+    }
+
+    return -1;
+  }
+  */
 
   public NwkSendWrapperClient sendWrapperClient;
   NetworkClient unetClient;
@@ -172,7 +186,7 @@ abstract public class NwkClient : NwkSystemBase
     //ref THIS client as connected in data
     getClientData(nwkUid).setConnected();
 
-    uiView.setConnected(true);
+    uiView?.setConnected(true);
   }
 
   protected override void onStateDisconnected()
@@ -181,7 +195,7 @@ abstract public class NwkClient : NwkSystemBase
 
     getClientData(nwkUid).setAsDisconnected();
 
-    uiView.setConnected(false);
+    uiView?.setConnected(false);
   }
 
   void unetOnOtherConnected(NetworkMessage message)
@@ -346,8 +360,12 @@ abstract public class NwkClient : NwkSystemBase
     log("this client generated network id : " + nwkUid + " ; connId : " + unetClient.connection.connectionId);
 
     string fullId = nwkUid + ":" + nwkConnId;
-    uiView.setLabel(GetType().ToString() + " " + fullId);
 
+    if(uiView != null)
+    {
+      uiView.setLabel(GetType().ToString() + " " + fullId);
+    }
+    
     log("network link is ready , solved network fid is : " + fullId);
   }
 
@@ -357,7 +375,7 @@ abstract public class NwkClient : NwkSystemBase
   {
     if (unetClient == null) return false;
     if (!unetClient.isConnected) return false;
-    return getParsedNwkUid() > -1;
+    return nwkUid.Length > 0;
   }
 
 

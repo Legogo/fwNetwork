@@ -24,13 +24,14 @@ abstract public class NwkServer : NwkSystemBase
     Application.runInBackground = true;
 
     Screen.SetResolution(1280, 720, false);
+
+    Debug.LogWarning("================== <b>SERVER</b> ==================");
   }
 
   override protected void setup()
   {
     CreateServer(); //auto create
   }
-
 
   public override void connect()
   {
@@ -134,7 +135,8 @@ abstract public class NwkServer : NwkSystemBase
       string fid = clientMsg.getHeader();
       log("received uid from client : " + clientMsg.senderUid + " ; fid : " + fid);
 
-      addClient(clientMsg.senderUid, clientConnectionMessage.conn.connectionId); // server ref new client in list
+      NwkClientData data = addClient(clientMsg.senderUid, clientConnectionMessage.conn.connectionId); // server ref new client in list
+      data.setConnected(); // mark as connected
 
       //broadcast to all
       NwkMessage msg = new NwkMessage();
@@ -164,6 +166,8 @@ abstract public class NwkServer : NwkSystemBase
     //NwkUiView nView = qh.gc<NwkUiView>();
     //if (nView != null) nView.onDisconnection();
 
+    //getClientData()
+
     broadcastDisconnectionPing();
   }
 
@@ -176,17 +180,9 @@ abstract public class NwkServer : NwkSystemBase
     float dlt;
     for (int i = 0; i < clientDatas.Count; i++)
     {
-      if (clientDatas[i].isDisconnected()) continue;
-
-      dlt = clientDatas[i].getPingValue();
-      //log(dlt + " / " + Time.realtimeSinceStartup);
-
-      dlt = Mathf.FloorToInt(Time.realtimeSinceStartup - dlt);
-
-      if (dlt > 10f)
+      if(clientDatas[i].updateTimeout(Time.realtimeSinceStartup))
       {
-        log(clientDatas[i].nwkUid + " timeout ! " + dlt);
-        clientDatas[i].setAsDisconnected();
+        log(clientDatas[i].nwkUid + " timeout !");
       }
     }
   }

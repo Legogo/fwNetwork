@@ -108,7 +108,14 @@ public class NwkUiView : MonoBehaviour
     stConnection.color = connected ? Color.green : Color.red;
     
     if (!btnConnect.gameObject.activeSelf) btnConnect.gameObject.SetActive(true);
-    btnConnect.GetComponentInChildren<Text>().text = connected ? "Disconnect" : "Connect";
+
+    Text label = btnConnect.GetComponentInChildren<Text>();
+    if(label != null)
+    {
+      if (NwkSystemBase.isServer()) label.text = connected ? "Shutdown" : "Boot";
+      else label.text = connected ? "Disconnect" : "Connect";
+    }
+    
   }
 
   public void onConnectButtonPressed()

@@ -84,7 +84,7 @@ abstract public class NwkSystemBase : MonoBehaviour
   virtual protected void setup()
   { }
 
-  private void Update()
+  void Update()
   {
     //update client data info :shrug:
     //le calcul de size / frame
@@ -118,7 +118,7 @@ abstract public class NwkSystemBase : MonoBehaviour
   virtual protected void updateNetwork()
   { }
 
-  protected void addClient(string newUid, int newConnId = -1)
+  protected NwkClientData addClient(string newUid, int newConnId = -1)
   {
     NwkClientData data = getClientData(newUid);
 
@@ -131,6 +131,8 @@ abstract public class NwkSystemBase : MonoBehaviour
     }
 
     //data.setConnected();
+
+    return data;
   }
 
   public NwkClientData getClientData(string uid)

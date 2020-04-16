@@ -20,7 +20,8 @@ public class NwkClientData
   public string nwkUid;
   public int connId;
 
-  float ping = 0f; // on server it shows last ping time
+  float ping = 0f; // on server it shows time elapsed since last ping reception
+  float timeoutLimit = 5f;
 
   public float sizeSeconds; // quantité de data dans le laps de temps
 
@@ -70,6 +71,25 @@ public class NwkClientData
     ping = dlt;
   }
 
+  /// <summary>
+  /// used in server context
+  /// return true only on timeout frame !
+  /// </summary>
+  public bool updateTimeout(float curTime)
+  {
+    if (isDisconnected()) return false;
+
+    float elasped = Mathf.FloorToInt(curTime - ping);
+
+    if (elasped > timeoutLimit)
+    {
+      setAsDisconnected();
+      return true;
+    }
+
+    return false;
+  }
+
   public float getPingValue() => ping;
 
   public int getPingDelta()
@@ -84,7 +104,8 @@ public class NwkClientData
       output = Time.realtimeSinceStartup - output; // server is last seen time
     }
 
-    return NwkModPing.getMilliSec(output);
+    //return NwkModPing.getMilliSec(output);
+    return Mathf.FloorToInt(output); // ms
   }
 
   public void setConnected()
