@@ -110,13 +110,6 @@ abstract public class NwkServer : NwkSystemBase
     NetworkServer.RegisterHandler(messageID, OnMessageReceived);
   }
 
-  private void RegisterHandler(short t, NetworkMessageDelegate handler)
-  {
-    NetworkServer.RegisterHandler(t, handler);
-  }
-
-
-
   void OnClientConnected(NetworkMessage clientConnectionMessage)
   {
     log("OnClientConnected ; sending ping pong transaction");
@@ -247,7 +240,7 @@ abstract public class NwkServer : NwkSystemBase
 
     //typ must be nulled (using none) to stop propagation
 
-    NwkMessageType typ = (NwkMessageType)msg.messageType;
+    NwkMessageType typ = (NwkMessageType)msg.messageId;
     switch (typ)
     {
       case NwkMessageType.CLT_DISCONNECTION_PONG:

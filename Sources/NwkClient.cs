@@ -58,7 +58,7 @@ abstract public class NwkClient : NwkSystemBase
 
     // Create the client ant attach the configuration
     unetClient = new NetworkClient();
-    unetClient.Configure(config, 1);
+    unetClient.Configure(config, 12);
 
     // Register the handlers for the different network messages
     RegisterHandlers();
@@ -236,7 +236,7 @@ abstract public class NwkClient : NwkSystemBase
   void solveBasicMessage(NwkMessage incMessage)
   {
 
-    NwkMessageType mtype = (NwkMessageType)incMessage.messageType;
+    NwkMessageType mtype = (NwkMessageType)incMessage.messageId;
 
     switch (mtype)
     {
@@ -297,14 +297,14 @@ abstract public class NwkClient : NwkSystemBase
         break;
       case NwkMessageType.NONE:
         break;
-      default: throw new NotImplementedException();
+      default: throw new NotImplementedException("not implem : "+mtype);
     }
 
   }
 
   void solveModsMessage(NwkMessage incMessage)
   {
-    NwkMessageMods mt = (NwkMessageMods)incMessage.messageType;
+    NwkMessageMods mt = (NwkMessageMods)incMessage.messageId;
     switch (mt)
     {
       case NwkMessageMods.NONE:

@@ -28,6 +28,6 @@ public class NwkSendWrapperClient : NwkSendWrapper
 
     unetClient.Send(msg.messageId, msg);
 
-    NwkSystemBase.nwkSys.log("sent message of type : " + msg.messageType);
+    NwkSystemBase.nwkSys.log("sent message of type : " + msg.messageId);
   }
 }

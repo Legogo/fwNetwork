@@ -41,22 +41,29 @@ public class NwkMessage : MessageBase
   public short messageId = 1000; // nwk print (:shrug:)
   
   public string senderUid = ""; // uniq id on network, server is 0
-  public int messageScope = 0; // 0 is basic msg ; 1 mods ; 2 custom ; all above is a specific way to discriminate
-  public int messageType = 0;
+  public short messageScope = 0; // 0 is basic msg ; 1 mods ; 2 custom ; all above is a specific way to discriminate
+  //public short messageType = 0;
   
-  public string messageHeader = ""; // the actual message
+  //data to transfert
   public byte[] messageBytes;
 
-  public int token = -1; // transaction token (not needed for one way transaction) ; ONLY WORKS for scope of 0
-  public bool silentLogs = false; // no logs
+  //string to transfert
+  public string messageHeader = ""; // the actual message
 
+  //transaction
+  public short token = -1; // transaction token (not needed for one way transaction) ; ONLY WORKS for scope of 0
+
+  //need to be mask
+  public bool silentLogs = false; // no logs
   public bool broadcast = false; // to aim other clients (but sender)
 
   public NwkMessage clean()
   {
     senderUid = "-1";
     messageScope = 0;
-    messageType = 0;
+
+    messageId = 1000; // default
+
     messageHeader = "";
     messageBytes = null;
     token = -1;
@@ -73,14 +80,14 @@ public class NwkMessage : MessageBase
   /// </summary>
   //public void setScope(int newScope) => messageScope = newScope;
 
-  public void setupNwkType(NwkMessageType typ) => setupNwkScopedType(NwkMessageScope.BASIC, (int)typ);
-  public void setupNwkType(NwkMessageMods typ) => setupNwkScopedType(NwkMessageScope.MODS, (int)typ);
-  public void setupNwkCustomType(int typ) => setupNwkScopedType(NwkMessageScope.CUSTOM, typ);
+  public void setupNwkType(NwkMessageType typ) => setupNwkScopedType(NwkMessageScope.BASIC, (short)typ);
+  public void setupNwkType(NwkMessageMods typ) => setupNwkScopedType(NwkMessageScope.MODS, (short)typ);
+  public void setupNwkCustomType(short typ) => setupNwkScopedType(NwkMessageScope.CUSTOM, (short)typ);
   
-  public void setupNwkScopedType(NwkMessageScope scope, int typ)
+  public void setupNwkScopedType(NwkMessageScope scope, short typ)
   {
-    messageScope = (int)scope;
-    messageType = typ;
+    messageScope = (short)scope;
+    messageId = typ;
   }
 
   public void setupHeader(string header) => messageHeader = header;
@@ -94,12 +101,12 @@ public class NwkMessage : MessageBase
     return deserializeObject(messageBytes);
   }
   
-  public bool cmpMessageType(NwkMessageType typ) => messageType == (int)typ;
+  public bool cmpMessageType(NwkMessageType typ) => messageId == (short)typ;
 
   public void generateToken()
   {
     if (token > -1) return;
-    token = Random.Range(0, 9999);
+    token = (short)Random.Range(0, 9999);
 
     if (messageScope > 0) Debug.LogError("can't use transaction for scopes != 0");
   }
@@ -114,7 +121,7 @@ public class NwkMessage : MessageBase
 
   public string toString()
   {
-    string ct = "["+GetType()+"] (scope ? "+messageScope+" , type ? " + messageType + ")";
+    string ct = "["+GetType()+"] (scope ? "+messageScope+" , type ? " + messageId + ")";
 
     ct += "\n  from : " + senderUid;
     
