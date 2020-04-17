@@ -10,9 +10,8 @@ using UnityEngine;
 
 public class NwkSyncableData
 {
-  public string syncNwkUid; // owner uid
-  public string syncUid; // given to msg header
-
+  public NwkSyncableId idCard;
+  
   public INwkSyncable handle;
 
   //for syncer to work with
@@ -21,14 +20,22 @@ public class NwkSyncableData
 
   public NwkSyncableData(INwkSyncable parent, float freq)
   {
-    syncUid = NwkClient.generateUniqId();
+    idCard = new NwkSyncableId();
+    idCard.syncIID = NwkClient.generateUniqId();
+    
+    //this is overritten in syncer first message when it's not local
+    idCard.syncNwkClientUID = NwkClient.nwkUid;
 
     handle = parent;
-
-    _sendTimer = 0f;
     _sendFrequency = freq;
 
+    resetState();
     //GameObject.FindObjectOfType<NwkSyncer>().sub(parent);
+  }
+
+  void resetState()
+  {
+    _sendTimer = 0f;
   }
 
   //public float 
@@ -55,4 +62,19 @@ public class NwkSyncableData
   public NwkMessage packMessage() => NwkSyncer.nwkSyncInject(this);
   public void unpackMessage(NwkMessage msg) => handle.unpack(msg.getMessage());
 
+  public NwkSyncableData overrideData(string nwkClientUID, string IID, string PID)
+  {
+    idCard.syncNwkClientUID = nwkClientUID;
+    idCard.syncIID = IID;
+    idCard.syncPID = PID;
+    return this;
+  }
+}
+
+[System.Serializable]
+public struct NwkSyncableId
+{
+  public string syncNwkClientUID; // client owner
+  public string syncIID;
+  public string syncPID;
 }

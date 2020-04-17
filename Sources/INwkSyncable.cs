@@ -9,18 +9,38 @@ public interface INwkSyncable
   object pack(); // generate an object with all data to sync
 
   /// <summary>
-  /// how to apply nwk object
-  /// unpack should only be used in NwkSyncableData
+  /// explains how to apply data received from server
+  /// unpack should not be HARD-link to syncer (bc objects are not sub to syncer when unpacking first time)
   /// </summary>
   void unpack(object obj);
 
-  //sync data (timer, id, ...)
+  /// <summary>
+  /// store and create on each object
+  /// </summary>
   NwkSyncableData getData();
 
+  //string getPrefabUID();
+}
+
+static public class INwkExtensions
+{
   /// <summary>
-  /// this method explains how to sub to syncer
-  /// and MUST be called by hand on object boot whenver the sync must start
+  /// explains how to sub to syncer
   /// </summary>
-  void subSync();
+  static public NwkSyncableData subSync(this INwkSyncable instance)
+  {
+    return GameObject.FindObjectOfType<NwkSyncer>().sub(instance);
+  }
+
+  /// <summary>
+  /// meant to pass specific balancing data on object generation
+  /// DO NOT MANAGE idcard
+  /// </summary>
+  static public NwkSyncableData createData(this INwkSyncable instance, float syncTime, string PID = "")
+  {
+    NwkSyncableData data = new NwkSyncableData(instance, syncTime);
+    data.idCard.syncPID = PID;
+    return data;
+  }
 
 }

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 /// <summary>
 /// bridge entre client <-> server et les INwkSyncable(s)
@@ -13,10 +14,18 @@ using UnityEngine;
 
 public class NwkSyncer : NwkMono
 {
+  public const char MSG_HEADER_SPEARATOR = '-';
+
   static public NwkSyncer instance;
 
   List<NwkMessage> stack = new List<NwkMessage>();
-  List<NwkSyncableData> syncs = new List<NwkSyncableData>();
+
+  //all objects that have capacities to sync son data
+  List<NwkSyncableData> broadcasters = new List<NwkSyncableData>();
+
+  //all objects that will sync their state at interval
+  //should be all ONLY local objects ?
+  List<NwkSyncableData> frequencers = new List<NwkSyncableData>();
 
   //list used by client to find objects concerned by a new message
   //unpack is usually called using this list
@@ -27,12 +36,19 @@ public class NwkSyncer : NwkMono
   float stackTimerFrequency = 0.33f;
   float stackTimer = 0f;
 
+  public DataNwkFactory factoryDb;
+
   override protected void Awake()
   {
     base.Awake();
     instance = this;
 
     //DontDestroyOnLoad(gameObject);
+
+    if(factoryDb == null)
+    {
+      Debug.LogWarning("no factory ? no copy will be possible");
+    }
   }
 
   private void Start()
@@ -42,30 +58,19 @@ public class NwkSyncer : NwkMono
       GameObject.DestroyImmediate(this);
       //enabled = false;
     }
+
+    Debug.Assert(nwkClient != null, "need client at this point");
   }
 
   private void Update()
   {
-    if(!NwkSystemBase.nwkSys.isConnected())
+    if (!NwkSystemBase.nwkSys.isConnected())
     {
       return;
     }
 
+    solveStack();
     //Debug.Log("has " + syncs.Count + " sync(s) & "+stack.Count+" msg(s)");
-
-    for (int i = 0; i < syncs.Count; i++)
-    {
-      //NwkSyncableData data = syncs[i].getData();
-      NwkSyncableData data = syncs[i];
-
-      //check if timer reached target (and is rebooted)
-      if (data.updateFreqTimer(Time.deltaTime))
-      {
-        stack.Add(data.packMessage());
-        data.resetFreqTimer();
-      }
-      //else Debug.Log(data.handle+" => "+data.getRemainingTime());
-    }
 
     if (useFrequency) //wait before sending all stored messages
     {
@@ -85,6 +90,25 @@ public class NwkSyncer : NwkMono
     
   }
 
+  void solveStack()
+  {
+
+    for (int i = 0; i < frequencers.Count; i++)
+    {
+      //NwkSyncableData data = syncs[i].getData();
+      NwkSyncableData data = frequencers[i];
+
+      //check if timer reached target (and is rebooted)
+      if (data.updateFreqTimer(Time.deltaTime))
+      {
+        stack.Add(data.packMessage());
+        data.resetFreqTimer();
+      }
+      //else Debug.Log(data.handle+" => "+data.getRemainingTime());
+    }
+
+  }
+
   void sendStack()
   {
     stackTimer = 0f;
@@ -92,7 +116,7 @@ public class NwkSyncer : NwkMono
     //nothing to send
     if (stack.Count <= 0) return;
 
-    Debug.Log("sending " + stack.Count + " msg(s)");
+    //Debug.Log("sending " + stack.Count + " msg(s)");
 
     for (int i = 0; i < stack.Count; i++)
     {
@@ -102,11 +126,11 @@ public class NwkSyncer : NwkMono
     stack.Clear();
   }
 
-  public bool hasSync(INwkSyncable sync)
+  public bool hasBroad(INwkSyncable sync)
   {
-    for (int i = 0; i < syncs.Count; i++)
+    for (int i = 0; i < broadcasters.Count; i++)
     {
-      if (syncs[i].handle == sync)
+      if (broadcasters[i].handle == sync)
       {
         return true;
       }
@@ -114,31 +138,47 @@ public class NwkSyncer : NwkMono
     return false;
   }
 
-  public void sub(INwkSyncable sync)
+  public NwkSyncableData sub(INwkSyncable sync)
   {
-    if(hasSync(sync))
+    if(hasBroad(sync))
     {
-      Debug.LogError("already has that sync ?");
-      return;
+      Debug.LogError("already has that sync ? " + sync);
+      return null;
     }
 
-    //NwkSyncableData data = sync.getData();
-    syncs.Add(sync.getData());
+    // at this point the generated IID is not final, it can be overritten just after sub (if copy)
+    NwkSyncableData data = sync.getData();
+
+    if (data != null)
+    {
+      broadcasters.Add(data);
+      
+      //on sub l'objet que si c'est un objet local
+      if(data.idCard.syncNwkClientUID == NwkClient.nwkUid)
+      {
+        frequencers.Add(data);
+      }
+
+      Debug.Log("sub '" + sync + "' to syncer");
+    }
+    else Debug.LogWarning(sync + " was not sub to syncer ?");
+
+    return data;
   }
 
   public void unsub(INwkSyncable sync)
   {
 
-    if (!hasSync(sync))
+    if (!hasBroad(sync))
     {
       Debug.LogError("don't have that sync to unsub");
       return;
     }
 
     int idx = 0;
-    while(idx < syncs.Count)
+    while(idx < broadcasters.Count)
     {
-      if (syncs[idx].handle == sync) stack.RemoveAt(idx);
+      if (broadcasters[idx].handle == sync) stack.RemoveAt(idx);
       else idx++;
     }
   }
@@ -151,32 +191,93 @@ public class NwkSyncer : NwkMono
   /// </summary>
   public void applyMessage(NwkMessage msg)
   {
-    bool found = false;
-    for (int i = 0; i < stack.Count; i++)
+    string header = msg.getHeader();
+    string[] split = header.Split(MSG_HEADER_SPEARATOR);
+
+    string iid = split[0];
+
+    NwkSyncableData data = getDataByIID(iid);
+
+    if (data == null)
     {
-      NwkSyncableData data = syncs[i];
+      Debug.LogWarning("no sync data found for msg " + header);
 
-      string header = msg.getHeader();
-      string[] tmp = header.Split('-');
+      string oType = split[1];
 
-      if (data.syncUid == tmp[0])
+      data = solveUnknownData(msg.senderUid, iid, oType);
+
+      if(data == null)
       {
-        data.unpackMessage(msg); // tell object to treat inc data
-        found = true;
+        log("don't have object " + msg.messageHeader + " sent by : " + msg.senderUid);
+      }
+      
+    }
+
+    //must have data here ?
+    if (data == null)
+    {
+      Debug.LogError("no data, must have some here");
+      return;
+    }
+    
+    data.unpackMessage(msg); // tell object to treat inc data
+  }
+
+  protected NwkSyncableData solveUnknownData(string cUID, string oIID, string oPID)
+  {
+    GameObject copy = factoryDb.copy(oPID);
+
+    if (copy == null)
+    {
+      Debug.LogWarning("no copy possible with PID : " + oPID);
+      return null;
+    }
+
+    copy.name = oIID;
+
+    Debug.Log(Time.frameCount + " => copy ? " + copy);
+
+    INwkSyncable sync = copy.GetComponent<INwkSyncable>();
+    if (sync == null) sync = copy.GetComponentInChildren<INwkSyncable>();
+
+    if(sync == null)
+    {
+      Debug.LogError("no sync found in copy ?");
+      return null;
+    }
+
+    //copy object will create it's own data during constructor
+    //but won't have owner info yet
+    NwkSyncableData data = sync.getData().overrideData(cUID, oIID, oPID);
+    
+    Debug.Log(Time.frameCount+" => data ? " + data);
+
+    return data;
+  }
+
+  NwkSyncableData getDataByIID(string iid)
+  {
+    NwkSyncableData data = null;
+
+    for (int i = 0; i < broadcasters.Count; i++)
+    {
+      if (broadcasters[i] == null) Debug.LogError(i + " is null (count ? "+ broadcasters.Count+") ? iid "+iid);
+      //if (syncs[i].idCard == null) Debug.LogError("no id card ?");
+
+      if (broadcasters[i].idCard.syncIID == iid)
+      {
+        data = broadcasters[i];
       }
     }
 
-    if(!found)
-    {
-      Debug.LogWarning("didn't find object with sync id : " + msg.messageHeader);
-    }
+    return data;
   }
 
-  bool hasObjectOfSyncUid(string syncUid)
+  bool hasBroadOfIID(string syncIID)
   {
-    for (int i = 0; i < stack.Count; i++)
+    for (int i = 0; i < broadcasters.Count; i++)
     {
-      if (syncs[i].syncUid == syncUid) return true;
+      if (broadcasters[i].idCard.syncIID == syncIID) return true;
     }
     return false;
   }
@@ -190,9 +291,17 @@ public class NwkSyncer : NwkMono
   {
     NwkMessage msg = new NwkMessage();
 
+    msg.senderUid = NwkClient.nwkUid;
+
     msg.setupNwkType(NwkMessageType.SYNC);
 
-    string header = syncData.syncUid+"-"+syncData.handle.GetType();
+    //header is body of message (not sender uid)
+    string header = syncData.idCard.syncIID;
+
+    header += "-" + syncData.idCard.syncPID;
+
+    //header += "-"+syncData.handle.GetType();
+
     msg.setupHeader(header);
     //msg.setupMessage(syncData.syncUid);
 

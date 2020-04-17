@@ -16,7 +16,7 @@ public enum NwkMessageType
   SRV_DISCONNECTION_PING, CLT_DISCONNECTION_PONG, // server broadcast ping ; all connected client must answer pong
   ASSIGN_ID,
   PING,PONG, // ping module
-  SYNC // syncables ; only for server to receive and keep track of data (NOT client <-> client)
+  SYNC, SYNC_ONCE // syncables ; only for server to receive and keep track of data (NOT client <-> client)
 };
 
 public enum NwkMessageMods
@@ -87,7 +87,12 @@ public class NwkMessage : MessageBase
   public string getHeader() => messageHeader;
 
   public void setupMessageData(object obj) => messageBytes = serializeObject(obj);
-  public object getMessage() => deserializeObject(messageBytes);
+  public object getMessage()
+  {
+    //needed in debug ctx
+    if (messageBytes == null) return null;
+    return deserializeObject(messageBytes);
+  }
   
   public bool cmpMessageType(NwkMessageType typ) => messageType == (int)typ;
 

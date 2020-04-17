@@ -26,7 +26,7 @@ abstract public class NwkSystemBase : MonoBehaviour
     nwkSys = this;
 
     //sendWrapper = generateSendWrapper();
-
+    
     listener = NwkMessageListener.getListener();
     if (listener == null) listener = gameObject.AddComponent<NwkMessageListener>();
   }

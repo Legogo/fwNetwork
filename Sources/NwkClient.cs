@@ -23,22 +23,6 @@ abstract public class NwkClient : NwkSystemBase
   static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
   static public int nwkConnId = -1;
 
-  /*
-  static public int getParsedNwkUid()
-  {
-    try
-    {
-      return int.Parse(nwkUid);
-    }
-    catch(Exception e)
-    {
-      Debug.Log("can't parse : " + nwkUid);
-    }
-
-    return -1;
-  }
-  */
-
   public NwkSendWrapperClient sendWrapperClient;
   NetworkClient unetClient;
 
@@ -301,8 +285,12 @@ abstract public class NwkClient : NwkSystemBase
         break;
       case NwkMessageType.SYNC:
 
-        if(incMessage.senderUid != NwkClient.nwkUid)
+        Debug.Log(Time.frameCount + " | " + incMessage.senderUid + " vs " + nwkUid);
+
+        //si y a modif d'un objet local par un autre client il faut passer par un msg type : SYNC_ONCE !
+        if (incMessage.senderUid != NwkClient.nwkUid)
         {
+          Debug.Log("  applied");
           NwkSyncer.instance.applyMessage(incMessage);
         }
 
@@ -396,7 +384,7 @@ abstract public class NwkClient : NwkSystemBase
     if (id.Length <= 0)
     {
       //id = generateUniqId();
-      id = SystemInfo.deviceUniqueIdentifier+"_"+Random.Range(0,999);
+      id = SystemInfo.deviceUniqueIdentifier+"_"+Random.Range(0,128);
 
       PlayerPrefs.SetString("nwkid", id);
       PlayerPrefs.Save();

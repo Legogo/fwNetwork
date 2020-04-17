@@ -14,6 +14,13 @@ public class NwkModControllers : NwkModule, INwkSyncable
   //list keep uids of old controllers but track connected state
   List<NwkModClientControllers> _clientsControllers = new List<NwkModClientControllers>();
 
+  protected override void setup()
+  {
+    base.setup();
+
+    this.subSync();
+  }
+
   NwkModClientControllers getClientControllers(string nwkUid)
   {
     for (int i = 0; i < _clientsControllers.Count; i++)
@@ -118,6 +125,7 @@ public class NwkModControllers : NwkModule, INwkSyncable
     }
   }
 
+
   public void unpack(object obj)
   {
     List<NwkModClientControllers> nwkList = (List<NwkModClientControllers>)obj;
@@ -142,6 +150,11 @@ public class NwkModControllers : NwkModule, INwkSyncable
   }
 
 
+
+
+
+
+
   public override void drawGui()
   {
     base.drawGui();
@@ -161,11 +174,6 @@ public class NwkModControllers : NwkModule, INwkSyncable
     }
     
   }
-
-  /// <summary>
-  /// pas opti
-  /// </summary>
-  public void subSync() => GameObject.FindObjectOfType<NwkSyncer>().sub(this);
 
   protected override bool canUpdate()
   {
