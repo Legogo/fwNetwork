@@ -11,10 +11,10 @@ public class NwkSendWrapperServer : NwkSendWrapper
  /// </summary>
   public void sendServerToClientTransaction(NwkMessage msg, int clientConnectionId, Action<NwkMessage> onTransactionCompleted = null)
   {
-    msg.setSender("0");
+    msg.setSender(0);
     msg.generateToken(); // a token for when the answer arrives
 
-    NetworkServer.SendToClient(clientConnectionId, msg.messageId, msg);
+    NetworkServer.SendToClient(clientConnectionId, msg.getMsgType(), msg);
     NwkMessageListener.getListener().add(msg, onTransactionCompleted);
   }
 
@@ -24,14 +24,14 @@ public class NwkSendWrapperServer : NwkSendWrapper
   /// </summary>
   public void sendServerAnswerToSpecificClient(NwkMessage msg, int clientConnectionId)
   {
-    msg.setSender("0");
-    NetworkServer.SendToClient(clientConnectionId, msg.messageId, msg);
+    msg.setSender(0);
+    NetworkServer.SendToClient(clientConnectionId, msg.getMsgType(), msg);
   }
 
   [Obsolete("use broadcast ; can't target specific client outside of answering flow")]
-  public void sendServerToClientsBut(NwkMessage msg, string filterNwkUid)
+  public void sendServerToClientsBut(NwkMessage msg, short filterNwkUid)
   {
-    msg.setSender("0"); // server
+    msg.setSender(0); // server
 
     List<NwkClientData> clients = NwkServer.nwkServer.clientDatas;
     for (int i = 0; i < clients.Count; i++)
@@ -48,10 +48,10 @@ public class NwkSendWrapperServer : NwkSendWrapper
   /// bridge to broadcast message to everyone
   /// only for server
   /// </summary>
-  public void broadcastServerToAll(NwkMessage msg, string senderUid)
+  public void broadcastServerToAll(NwkMessage msg, short senderUid)
   {
     msg.setSender(senderUid);
-    NetworkServer.SendToAll(msg.messageId, msg);
+    NetworkServer.SendToAll(msg.getMsgType(), msg);
   }
 
 }

@@ -62,7 +62,7 @@ public class NwkSyncableData
   public NwkMessage packMessage() => NwkSyncer.nwkSyncInject(this);
   public void unpackMessage(NwkMessage msg) => handle.unpack(msg.getMessage());
 
-  public NwkSyncableData overrideData(string nwkClientUID, string IID, string PID)
+  public NwkSyncableData overrideData(short nwkClientUID, short IID, short PID)
   {
     idCard.syncNwkClientUID = nwkClientUID;
     idCard.syncIID = IID;
@@ -74,7 +74,7 @@ public class NwkSyncableData
 [System.Serializable]
 public struct NwkSyncableId
 {
-  public string syncNwkClientUID; // client owner
-  public string syncIID;
-  public string syncPID;
+  public short syncNwkClientUID; // client owner ID
+  public short syncIID; // uniq instance ID
+  public short syncPID; // name of prefab
 }

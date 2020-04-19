@@ -121,7 +121,7 @@ abstract public class NwkSystemBase : MonoBehaviour
   virtual protected void updateNetwork()
   { }
 
-  protected NwkClientData addClient(string newUid, int newConnId = -1)
+  protected NwkClientData addClient(short newUid, int newConnId = -1)
   {
     NwkClientData data = getClientData(newUid);
 
@@ -138,7 +138,7 @@ abstract public class NwkSystemBase : MonoBehaviour
     return data;
   }
 
-  public NwkClientData getClientData(string uid)
+  public NwkClientData getClientData(short uid)
   {
     for (int i = 0; i < clientDatas.Count; i++)
     {

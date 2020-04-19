@@ -21,18 +21,15 @@ public class DataNwkFactory : ScriptableObject
   public GameObject[] items;
   //public NwkFactoryItem[] items;
 
-  public GameObject copy(string type)
+  public GameObject copy(short typeIndex)
   {
 
-    for (int i = 0; i < items.Length; i++)
+    if(items.Length < typeIndex)
     {
-      if(items[i].name == type)
-      {
-        return GameObject.Instantiate(items[i]);
-      }
+      return GameObject.Instantiate(items[typeIndex]);
     }
 
-    Debug.LogWarning("no object " + type + " in factory");
+    Debug.LogWarning("no object for index " + typeIndex + " in factory");
 
     return null;
   }

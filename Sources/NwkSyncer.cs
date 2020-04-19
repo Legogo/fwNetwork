@@ -194,7 +194,7 @@ public class NwkSyncer : NwkMono
     string header = msg.getHeader();
     string[] split = header.Split(MSG_HEADER_SPEARATOR);
 
-    string iid = split[0];
+    short iid = short.Parse(split[0]);
 
     NwkSyncableData data = getDataByIID(iid);
 
@@ -202,7 +202,7 @@ public class NwkSyncer : NwkMono
     {
       Debug.LogWarning("no sync data found for msg " + header);
 
-      string oType = split[1];
+      short oType = short.Parse(split[1]);
 
       data = solveUnknownData(msg.senderUid, iid, oType);
 
@@ -223,7 +223,7 @@ public class NwkSyncer : NwkMono
     data.unpackMessage(msg); // tell object to treat inc data
   }
 
-  protected NwkSyncableData solveUnknownData(string cUID, string oIID, string oPID)
+  protected NwkSyncableData solveUnknownData(short cUID, short oIID, short oPID)
   {
     GameObject copy = factoryDb.copy(oPID);
 
@@ -233,7 +233,7 @@ public class NwkSyncer : NwkMono
       return null;
     }
 
-    copy.name = oIID;
+    copy.name = oIID.ToString();
 
     Debug.Log(Time.frameCount + " => copy ? " + copy);
 
@@ -255,7 +255,7 @@ public class NwkSyncer : NwkMono
     return data;
   }
 
-  NwkSyncableData getDataByIID(string iid)
+  NwkSyncableData getDataByIID(short iid)
   {
     NwkSyncableData data = null;
 
@@ -273,7 +273,7 @@ public class NwkSyncer : NwkMono
     return data;
   }
 
-  bool hasBroadOfIID(string syncIID)
+  bool hasBroadOfIID(short syncIID)
   {
     for (int i = 0; i < broadcasters.Count; i++)
     {
@@ -296,7 +296,7 @@ public class NwkSyncer : NwkMono
     msg.setupNwkType(NwkMessageType.SYNC);
 
     //header is body of message (not sender uid)
-    string header = syncData.idCard.syncIID;
+    string header = syncData.idCard.syncIID.ToString();
 
     header += "-" + syncData.idCard.syncPID;
 

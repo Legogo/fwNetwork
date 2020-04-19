@@ -36,7 +36,7 @@ static public class INwkExtensions
   /// meant to pass specific balancing data on object generation
   /// DO NOT MANAGE idcard
   /// </summary>
-  static public NwkSyncableData createData(this INwkSyncable instance, float syncTime, string PID = "")
+  static public NwkSyncableData createData(this INwkSyncable instance, float syncTime, short PID = -1)
   {
     NwkSyncableData data = new NwkSyncableData(instance, syncTime);
     data.idCard.syncPID = PID;

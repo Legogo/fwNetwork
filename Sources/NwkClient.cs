@@ -20,7 +20,7 @@ abstract public class NwkClient : NwkSystemBase
 
   static public NwkClient nwkClient;
   
-  static public string nwkUid = "-1"; // will be populated ; stays at -1 until it created a connection with server
+  static public short nwkUid = -1; // will be populated ; stays at -1 until it created a connection with server
   static public int nwkConnId = -1;
 
   public NwkSendWrapperClient sendWrapperClient;
@@ -43,7 +43,7 @@ abstract public class NwkClient : NwkSystemBase
 
     CreateClient();
 
-    addClient(nwkUid.ToString()); // localy add ref
+    addClient(nwkUid); // localy add ref
   }
 
   void CreateClient()
@@ -236,14 +236,13 @@ abstract public class NwkClient : NwkSystemBase
   void solveBasicMessage(NwkMessage incMessage)
   {
 
-    NwkMessageType mtype = (NwkMessageType)incMessage.messageId;
+    NwkMessageType mtype = (NwkMessageType)incMessage.getMsgType();
 
     switch (mtype)
     {
       case NwkMessageType.CONNECTION:
 
-
-        string broadcastedUid = incMessage.getHeader();
+        short broadcastedUid = short.Parse(incMessage.getHeader());
 
         if (broadcastedUid == nwkUid)
         {
@@ -304,7 +303,7 @@ abstract public class NwkClient : NwkSystemBase
 
   void solveModsMessage(NwkMessage incMessage)
   {
-    NwkMessageMods mt = (NwkMessageMods)incMessage.messageId;
+    NwkMessageMods mt = (NwkMessageMods)incMessage.getMsgType();
     switch (mt)
     {
       case NwkMessageMods.NONE:
@@ -368,7 +367,7 @@ abstract public class NwkClient : NwkSystemBase
   {
     if (unetClient == null) return false;
     if (!unetClient.isConnected) return false;
-    return nwkUid.Length > 0;
+    return nwkUid > 0;
   }
 
 
@@ -377,26 +376,31 @@ abstract public class NwkClient : NwkSystemBase
   /// <summary>
   /// uid is stored in ppref for next launch
   /// </summary>
-  static public string generateUniqNetworkId()
+  static public short generateUniqNetworkId()
   {
-    string id = PlayerPrefs.GetString("nwkid", "");
+    short id = (short)PlayerPrefs.GetInt("nwkid", -1);
 
-    if (id.Length <= 0)
+    if (id < 0)
     {
-      //id = generateUniqId();
-      id = SystemInfo.deviceUniqueIdentifier+"_"+Random.Range(0,128);
+      id = generateUniqId();
+      //id = SystemInfo.deviceUniqueIdentifier;
 
-      PlayerPrefs.SetString("nwkid", id);
+      PlayerPrefs.SetInt("nwkid", id);
       PlayerPrefs.Save();
     }
 
     return id;
   }
 
+  static public short generateUniqId()
+  {
+    return (short)Random.Range(0, 9999);
+  }
+
   /// <summary>
   /// generic generator
   /// </summary>
-  static public string generateUniqId()
+  static public string generateUniqStringId()
   {
     //solve uid
     string newUid = Random.Range(0, 999999).ToString();

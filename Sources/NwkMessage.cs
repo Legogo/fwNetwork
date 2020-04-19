@@ -38,9 +38,9 @@ public enum NwkMessageScope
 /// </summary>
 public class NwkMessage : MessageBase
 {
-  public short messageId = 1000; // nwk print (:shrug:)
+  short messageId = 1000; // nwk print (:shrug:)
   
-  public string senderUid = ""; // uniq id on network, server is 0
+  public short senderUid; // uniq id on network, server is 0, -1 is unassigned
   public short messageScope = 0; // 0 is basic msg ; 1 mods ; 2 custom ; all above is a specific way to discriminate
   //public short messageType = 0;
   
@@ -59,7 +59,7 @@ public class NwkMessage : MessageBase
 
   public NwkMessage clean()
   {
-    senderUid = "-1";
+    senderUid = -1;
     messageScope = 0;
 
     messageId = 1000; // default
@@ -73,13 +73,14 @@ public class NwkMessage : MessageBase
     return this;
   }
 
-  public void setSender(string senderUid) => this.senderUid = senderUid;
+  public void setSender(short senderUid) => this.senderUid = senderUid;
 
   /// <summary>
   /// it's better to set scope through a type setup method
   /// </summary>
   //public void setScope(int newScope) => messageScope = newScope;
 
+  public short getMsgType() => messageId;
   public void setupNwkType(NwkMessageType typ) => setupNwkScopedType(NwkMessageScope.BASIC, (short)typ);
   public void setupNwkType(NwkMessageMods typ) => setupNwkScopedType(NwkMessageScope.MODS, (short)typ);
   public void setupNwkCustomType(short typ) => setupNwkScopedType(NwkMessageScope.CUSTOM, (short)typ);
@@ -149,7 +150,7 @@ public class NwkMessage : MessageBase
     return bf.Deserialize(stream);
   }
 
-  static public NwkMessage getStandardMessage(string sender, NwkMessageType msgType)
+  static public NwkMessage getStandardMessage(short sender, NwkMessageType msgType)
   {
     NwkMessage msg = new NwkMessage();
     msg.setSender(sender);

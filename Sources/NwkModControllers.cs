@@ -21,7 +21,7 @@ public class NwkModControllers : NwkModule, INwkSyncable
     this.subSync();
   }
 
-  NwkModClientControllers getClientControllers(string nwkUid)
+  NwkModClientControllers getClientControllers(short nwkUid)
   {
     for (int i = 0; i < _clientsControllers.Count; i++)
     {
@@ -33,7 +33,7 @@ public class NwkModControllers : NwkModule, INwkSyncable
   /// <summary>
   /// deviceUid is id given by Input system for each controller
   /// </summary>
-  public void extControllerPlugged(string deviceNwkUid, int deviceUid)
+  public void extControllerPlugged(short deviceNwkUid, int deviceUid)
   {
     NwkModClientControllers cc = getClientControllers(deviceNwkUid);
 
@@ -74,7 +74,7 @@ public class NwkModControllers : NwkModule, INwkSyncable
 
   }
 
-  public void extControllerUnplugged(string deviceNwkUid, int deviceUid)
+  public void extControllerUnplugged(short deviceNwkUid, int deviceUid)
   {
     NwkModClientControllers cc = getClientControllers(deviceNwkUid);
     if(cc == null)
@@ -184,7 +184,7 @@ public class NwkModControllers : NwkModule, INwkSyncable
 [System.Serializable]
 public class NwkModClientControllers
 {
-  public string clientNwkUid = "";
+  public short clientNwkUid = -1;
   public List<SolverControllerState> clientControllers = new List<SolverControllerState>();
 
   public bool removeControllerOfId(int deviceId)

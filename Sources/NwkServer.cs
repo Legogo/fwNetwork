@@ -117,7 +117,7 @@ abstract public class NwkServer : NwkSystemBase
     //server prepare message to ask for uid of newly connected client
     //to send only to new client server will use connectionId stored within origin conn message
     NwkMessage outgoingMessage = new NwkMessage();
-    outgoingMessage.setSender("0");
+    outgoingMessage.setSender(0);
     outgoingMessage.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
 
     //give message to listener system to plug a callback
@@ -134,12 +134,12 @@ abstract public class NwkServer : NwkSystemBase
       //broadcast to all
       NwkMessage msg = new NwkMessage();
       msg.setupNwkType(NwkMessageType.CONNECTION);
-      msg.setSender("0");
+      msg.setSender(0);
 
-      msg.setupHeader(clientMsg.senderUid); // msg will contain new client uid
+      msg.setupHeader(clientMsg.senderUid.ToString()); // msg will contain new client uid
 
       //send new client UID to everybody
-      sendWrapper.broadcastServerToAll(msg, "0");
+      sendWrapper.broadcastServerToAll(msg, 0);
 
       // ---
 
@@ -205,7 +205,8 @@ abstract public class NwkServer : NwkSystemBase
       int msgSize = incomingMessage.messageBytes.Length * 4;
       if (msgSize > 0)
       {
-        if (incomingMessage.senderUid.Length > 0)
+        //incoming message has sender ?
+        if (incomingMessage.senderUid > 0)
         {
           getClientData(incomingMessage.senderUid).msgSizes.Add(msgSize);
         }
@@ -240,7 +241,7 @@ abstract public class NwkServer : NwkSystemBase
 
     //typ must be nulled (using none) to stop propagation
 
-    NwkMessageType typ = (NwkMessageType)msg.messageId;
+    NwkMessageType typ = (NwkMessageType)msg.getMsgType();
     switch (typ)
     {
       case NwkMessageType.CLT_DISCONNECTION_PONG:
@@ -290,7 +291,7 @@ abstract public class NwkServer : NwkSystemBase
 
   }
 
-  void pingMessage(string senderUid)
+  void pingMessage(short senderUid)
   {
     getClientData(senderUid).eventPing(Time.realtimeSinceStartup);
   }
@@ -329,10 +330,10 @@ abstract public class NwkServer : NwkSystemBase
     //server will start timeout-ing all clients
     //and will stop timeout-ing everyclients that answers
     NwkMessage msg = new NwkMessage();
-    msg.setSender("0");
+    msg.setSender(0);
     msg.setupNwkType(NwkMessageType.SRV_DISCONNECTION_PING);
 
-    sendWrapper.broadcastServerToAll(msg, "0");
+    sendWrapper.broadcastServerToAll(msg, 0);
 
     //after deconnection we wait for a signal JIC
     //for (int i = 0; i < clientDatas.Count; i++) clientDatas[i].startTimeout();
@@ -343,7 +344,7 @@ abstract public class NwkServer : NwkSystemBase
   /// </summary>
   void cleanClientList()
   {
-    List<string> keys = new List<string>();
+    List<short> keys = new List<short>();
     for (int i = 0; i < clientDatas.Count; i++)
     {
       if (clientDatas[i].isDisconnected())

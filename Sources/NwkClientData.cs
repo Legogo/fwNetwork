@@ -17,7 +17,7 @@ public class NwkClientData
   public enum ClientState { CONNECTED, DISCONNECTED };
   public ClientState state = ClientState.DISCONNECTED;
 
-  public string nwkUid;
+  public short nwkUid;
   public int connId;
 
   float ping = 0f; // on server it shows time elapsed since last ping reception
@@ -29,7 +29,7 @@ public class NwkClientData
   float sizesTimer = 0f;
   float sizesTime = 1f;
 
-  public NwkClientData(string nwkUid)
+  public NwkClientData(short nwkUid)
   {
     this.nwkUid = nwkUid;
 
