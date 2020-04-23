@@ -15,7 +15,7 @@ using UnityEditor.SceneManagement;
 /// 
 /// </summary>
 
-[CreateAssetMenu(menuName = "sarko/create DataNwkFactory", order = 100)]
+[CreateAssetMenu(menuName = "fwNetwork/create DataNwkFactory", order = 100)]
 public class DataNwkFactory : ScriptableObject
 {
 

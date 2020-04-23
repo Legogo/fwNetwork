@@ -177,7 +177,7 @@ public class NwkModControllers : NwkModule, INwkSyncable
 
   protected override bool canUpdate()
   {
-    throw new System.NotImplementedException();
+    return true;
   }
 }
 
