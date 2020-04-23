@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -32,6 +33,23 @@ public class DataNwkFactory : ScriptableObject
     Debug.LogWarning("no object for index " + typeIndex + " in factory");
 
     return null;
+  }
+
+  public short getItemIndex(Transform tr)
+  {
+    for (short i = 0; i < items.Length; i++)
+    {
+      if(items[i].name == tr.name)
+      {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  public string getItemName(short index)
+  {
+    return items[index].name;
   }
 }
 
