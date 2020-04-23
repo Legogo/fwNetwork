@@ -32,11 +32,22 @@ public class NwkUiView : MonoBehaviour
     btnConnect.gameObject.SetActive(false);
 
     _canvas = GetComponent<Canvas>();
+    hide();
   }
 
   private void Start()
   {
     setConnected(false);
+  }
+
+  public void show()
+  {
+    _canvas.enabled = true;
+  }
+
+  public void hide()
+  {
+    _canvas.enabled = false;
   }
 
   public void setLabel(string newLabel)
@@ -115,7 +126,8 @@ public class NwkUiView : MonoBehaviour
       if (NwkSystemBase.isServer()) label.text = connected ? "Shutdown" : "Boot";
       else label.text = connected ? "Disconnect" : "Connect";
     }
-    
+
+    show();
   }
 
   public void onConnectButtonPressed()

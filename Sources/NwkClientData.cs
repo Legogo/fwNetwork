@@ -114,7 +114,7 @@ public class NwkClientData
 
     ping = Time.realtimeSinceStartup; // for server side
 
-    NwkSystemBase.nwkSys.log(nwkUid + " setup as connected !");
+    NwkSystemBase.nwkSys.log("nwk uid : "+nwkUid + " setup as connected !");
   }
 
   public void setAsDisconnected()

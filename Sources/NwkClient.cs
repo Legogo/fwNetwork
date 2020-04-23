@@ -68,6 +68,10 @@ abstract public class NwkClient : NwkSystemBase
       log("this client is flagged without lobby, attemping connection ...");
       connectToIpPort(getConnectionIpAddress()); // localhost
     }
+    else
+    {
+      Debug.LogWarning("using lobby system, app must implem it's own way to connect to server");
+    }
 
   }
 
@@ -208,6 +212,8 @@ abstract public class NwkClient : NwkSystemBase
   // Message received from the server
   void unetOnMessageReceived(NetworkMessage netMessage)
   {
+    Debug.Log(netMessage);
+
     NwkMessage incMessage = convertMessage(netMessage);
 
     if (incMessage == null)
