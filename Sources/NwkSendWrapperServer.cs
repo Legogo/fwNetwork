@@ -1,57 +1,60 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
 using UnityEngine.Networking;
 using System;
+using UnityEngine;
+
+/// <summary>
+/// 
+/// SERVER TO CLIENT
+/// 
+/// </summary>
 
 public class NwkSendWrapperServer : NwkSendWrapper
-{/// <summary>
- /// SERVER
- /// server -> send -> client
- /// </summary>
-  public void sendServerToClientTransaction(NwkMessage msg, int clientConnectionId, Action<NwkMessage> onTransactionCompleted = null)
-  {
-    msg.setSender(0);
-    msg.generateToken(); // a token for when the answer arrives
-
-    NetworkServer.SendToClient(clientConnectionId, msg.getMsgType(), msg);
-    NwkMessageListener.getListener().add(msg, onTransactionCompleted);
-  }
+{
 
   /// <summary>
   /// SERVER
   /// this function needs to provide the client connection id
   /// </summary>
-  public void sendServerAnswerToSpecificClient(NwkMessage msg, int clientConnectionId)
+  public void sendToSpecificClient(iNwkMessageId message, int clientConnectionId)
   {
-    msg.setSender(0);
-    NetworkServer.SendToClient(clientConnectionId, msg.getMsgType(), msg);
+    NetworkServer.SendToClient(clientConnectionId, message.getMessageId(), message as MessageBase);
   }
 
-  [Obsolete("use broadcast ; can't target specific client outside of answering flow")]
-  public void sendServerToClientsBut(NwkMessage msg, short filterNwkUid)
+  /// <summary>
+  /// SERVER
+  /// server -> send -> client
+  /// </summary>
+  public void sendTransaction(NwkMessageTransaction message, int clientConnectionId, Action<NwkMessageTransaction> onTransactionCompleted = null)
   {
-    msg.setSender(0); // server
+    message.getIdCard().setMessageSender(0);
 
-    List<NwkClientData> clients = NwkServer.nwkServer.clientDatas;
-    for (int i = 0; i < clients.Count; i++)
-    {
-      if(clients[i].nwkUid != filterNwkUid)
-      {
-        //NetworkServer.SendToClient(clients[i]);
-      }
-    }
+    // won't change token if already setup
+    // a token for when the answer arrives
+
+    message.generateToken();
+
+    Debug.Assert(message.getMessageId() != NwkMessageTransaction.MSG_ID_TRANSACTION, "trying to send transaction message with a message that is not a transaction message");
+    Debug.Assert(message.getIdCard().getMessageType() >= 0, "message type is not setup ?");
+    Debug.Assert(message.token >= 0, "token is not setup");
+
+    NwkSystemBase.nwkSys.log("sending transaction ("+ message.getMessageId()+") token ? " + message.token+" type ? "+ message.getIdCard().getMessageType());
+
+    NetworkServer.SendToClient(clientConnectionId, message.getMessageId(), message);
+    NwkMessageListener.getListener().add(message, onTransactionCompleted);
   }
 
   /// <summary>
   /// SERVER
   /// bridge to broadcast message to everyone
   /// only for server
+  /// 
+  /// senderUid can be different if trying to forward some data from a client to all other clients
   /// </summary>
-  public void broadcastServerToAll(NwkMessage msg, short senderUid)
+  public void broadcastServerToAll(iNwkMessageId message, int senderUid = 0)
   {
-    msg.setSender(senderUid);
-    NetworkServer.SendToAll(msg.getMsgType(), msg);
+    message.getIdCard().setMessageSender(senderUid);
+    NetworkServer.SendToAll(message.getMessageId(), message as MessageBase);
   }
 
 }

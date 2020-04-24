@@ -14,7 +14,7 @@ public class NwkMessageListener : MonoBehaviour
   //stack of message to process
   List<NwkMessageListenerCouple> msgs = new List<NwkMessageListenerCouple>();
   
-  public void add(NwkMessage msg, Action<NwkMessage> onCompletion)
+  public void add(NwkMessageTransaction msg, Action<NwkMessageTransaction> onCompletion)
   {
     NwkMessageListenerCouple couple = new NwkMessageListenerCouple();
     couple.onMsgReceived += onCompletion;
@@ -26,7 +26,7 @@ public class NwkMessageListener : MonoBehaviour
   /// called by server on message received
   /// </summary>
   /// <returns>quantity of message left to process</returns>
-  public int solveReceivedMessage(NwkMessage msg)
+  public int solveReceivedMessage(NwkMessageTransaction msg)
   {
     //search for transaction and remove it
     int i = 0;
@@ -70,8 +70,8 @@ public class NwkMessageListener : MonoBehaviour
 
 public struct NwkMessageListenerCouple
 {
-  public Action<NwkMessage> onMsgReceived;
-  public NwkMessage originalMessage;
+  public Action<NwkMessageTransaction> onMsgReceived;
+  public NwkMessageTransaction originalMessage;
 
   public void clear()
   {

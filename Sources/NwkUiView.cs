@@ -50,6 +50,12 @@ public class NwkUiView : MonoBehaviour
     _canvas.enabled = false;
   }
 
+  public void setupBoot(string label, bool connected)
+  {
+    setLabel(label);
+    setConnected(true);
+  }
+
   public void setLabel(string newLabel)
   {
     txtLabel.text = newLabel;
@@ -111,7 +117,7 @@ public class NwkUiView : MonoBehaviour
 
     logs.addLog(ct);
 
-    Debug.Log("<color=orange>nwk</color> "+ct);
+    //Debug.Log("<color=orange>nwk</color> "+ct);
   }
 
   public void setConnected(bool connected)

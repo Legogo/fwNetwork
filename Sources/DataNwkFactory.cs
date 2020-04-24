@@ -22,7 +22,7 @@ public class DataNwkFactory : ScriptableObject
   public GameObject[] items;
   //public NwkFactoryItem[] items;
 
-  public GameObject copy(short typeIndex)
+  public GameObject copy(int typeIndex)
   {
 
     if(items.Length < typeIndex)

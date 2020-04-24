@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Networking;
+using System;
 
 abstract public class NwkSystemBase : MonoBehaviour
 {
   public static NwkSystemBase nwkSys;
 
   // The id we use to identify our messages and register the handler
-  protected short messageID = 1000;
+  public const short messageID = 1000;
 
   protected NwkMessageListener listener;
 
@@ -45,12 +47,6 @@ abstract public class NwkSystemBase : MonoBehaviour
 
     //Debug.Log("waiting for nwk ui view ...");
 
-    yield return null;
-
-    setup();
-
-    yield return null;
-
     if (useUiView)
     {
       Debug.Log("loading debug ui view");
@@ -68,6 +64,7 @@ abstract public class NwkSystemBase : MonoBehaviour
       //Debug.Log(uiView);
     }
 
+    setup();
   }
 
   /// <summary>
@@ -111,14 +108,31 @@ abstract public class NwkSystemBase : MonoBehaviour
     updateNetwork();
   }
 
+  abstract protected void registerHandle(short messageID, NetworkMessageDelegate callback);
+
+  virtual protected void registerHandlers()
+  {
+    registerHandle(NwkMessageBasic.MSG_ID_BASIC, unetOnMessageBasic);
+    registerHandle(NwkMessageComplexe.MSG_ID_COMPLEXE, unetOnMessageComplexe);
+    registerHandle(NwkMessageTransaction.MSG_ID_TRANSACTION, unetOnMessageTransaction);
+    registerHandle(NwkMessageFull.MSG_ID_FULL, unetOnMessageFull);
+  }
+
+  void unetOnMessageBasic(NetworkMessage netMessage) => solveBasic(netMessage.ReadMessage<NwkMessageBasic>(), netMessage.conn.connectionId);
+  void unetOnMessageComplexe(NetworkMessage netMessage) => solveComplexe(netMessage.ReadMessage<NwkMessageComplexe>(), netMessage.conn.connectionId);
+  void unetOnMessageTransaction(NetworkMessage netMessage) => solveTransaction(netMessage.ReadMessage<NwkMessageTransaction>(), netMessage.conn.connectionId);
+  void unetOnMessageFull(NetworkMessage netMessage) => solveFull(netMessage.ReadMessage<NwkMessageFull>(), netMessage.conn.connectionId);
+
+  abstract protected void solveBasic(NwkMessageBasic message, int connID);
+  abstract protected void solveComplexe(NwkMessageComplexe message, int connID);
+  abstract protected void solveTransaction(NwkMessageTransaction message, int connID);
+  abstract protected void solveFull(NwkMessageFull message, int connID);
+
   virtual protected void onStateConnected()
   {
     Debug.Log("<b>"+GetType() + " connected !</b>");
 
-    if (uiView != null)
-    {
-      uiView.setConnected(true);
-    }
+    uiView?.setConnected(true);
   }
 
   virtual protected void onStateDisconnected()
@@ -129,7 +143,7 @@ abstract public class NwkSystemBase : MonoBehaviour
   virtual protected void updateNetwork()
   { }
 
-  protected NwkClientData addClient(short newUid, int newConnId = -1)
+  protected NwkClientData addClient(int newUid, int newConnId = -1)
   {
     NwkClientData data = getClientData(newUid);
 
@@ -146,7 +160,7 @@ abstract public class NwkSystemBase : MonoBehaviour
     return data;
   }
 
-  public NwkClientData getClientData(short uid)
+  public NwkClientData getClientData(int uid)
   {
     for (int i = 0; i < clientDatas.Count; i++)
     {

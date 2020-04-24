@@ -1,4 +1,12 @@
-﻿using UnityEngine.Networking;
+﻿using System;
+using System.Diagnostics;
+using UnityEngine.Networking;
+
+/// <summary>
+/// 
+/// CLIENT TO SERVER
+/// 
+/// </summary>
 
 public class NwkSendWrapperClient : NwkSendWrapper
 {
@@ -9,25 +17,15 @@ public class NwkSendWrapperClient : NwkSendWrapper
     this.unetClient = unetClient;
   }
 
-  /// <summary>
-  /// CLIENT
-  /// </summary>
-  /// <param name="msg"></param>
-  public void sendClientToServer(NwkMessage msg)
+  public void sendClientToServer(iNwkMessageId message)
   {
-    msg.senderUid = NwkClient.nwkUid; // assign client id before sending
-    unetClient.Send(msg.getMsgType(), msg);
-    //unetClient.SendUnreliable
-    //NwkSystemBase.nwkSys.log("sent message of type : " + msg.messageType);
+    Debug.Assert(message != null, "no message given ?");
+
+    NwkSystemBase.nwkSys.log("sending "+message.GetType()+" | " + message.getIdCard().toString());
+    
+    Debug.Assert((message as MessageBase) != null, "can't cast message to unet type ?");
+
+    unetClient.Send(message.getMessageId(), message as MessageBase);
   }
 
-  public void sendClientToClients(NwkMessage msg)
-  {
-    msg.senderUid = NwkClient.nwkUid; // assign client id before sending
-    msg.broadcast = true;
-
-    unetClient.Send(msg.getMsgType(), msg);
-
-    NwkSystemBase.nwkSys.log("sent message of type : " + msg.getMsgType());
-  }
 }

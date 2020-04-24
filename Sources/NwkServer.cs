@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using UnityEngine.Networking;
-using Random = UnityEngine.Random;
 
 abstract public class NwkServer : NwkSystemBase
 {
@@ -48,7 +47,7 @@ abstract public class NwkServer : NwkSystemBase
   void CreateServer()
   {
     // Register handlers for the types of messages we can receive
-    RegisterHandlers();
+    registerHandlers();
 
     ConnectionConfig config = new ConnectionConfig();
     // There are different types of channels you can use, check the official documentation
@@ -100,14 +99,19 @@ abstract public class NwkServer : NwkSystemBase
     NetworkServer.Shutdown();
   }
 
-  private void RegisterHandlers()
+  protected override void registerHandle(short messageID, NetworkMessageDelegate callback)
   {
+    NetworkServer.RegisterHandler(messageID, callback);
+  }
+
+  protected override void registerHandlers()
+  {
+    base.registerHandlers();
+
     // Unity have different Messages types defined in MsgType
     NetworkServer.RegisterHandler(MsgType.Connect, OnClientConnected);
     NetworkServer.RegisterHandler(MsgType.Disconnect, OnClientDisconnected);
 
-    // Our message use his own message type.
-    NetworkServer.RegisterHandler(messageID, OnMessageReceived);
   }
 
   void OnClientConnected(NetworkMessage clientConnectionMessage)
@@ -116,27 +120,24 @@ abstract public class NwkServer : NwkSystemBase
 
     //server prepare message to ask for uid of newly connected client
     //to send only to new client server will use connectionId stored within origin conn message
-    NwkMessage outgoingMessage = new NwkMessage();
-    outgoingMessage.setSender(0);
-    outgoingMessage.setupNwkType(NwkMessageType.CONNECTION_PINGPONG);
+    NwkMessageTransaction transMessage = new NwkMessageTransaction();
+    transMessage.getIdCard().setupId(0, (int)eNwkMessageType.CONNECTION_PINGPONG);
 
     //give message to listener system to plug a callback
-    sendWrapper.sendServerToClientTransaction(outgoingMessage, clientConnectionMessage.conn.connectionId, delegate (NwkMessage clientMsg)
+    sendWrapper.sendTransaction(transMessage, clientConnectionMessage.conn.connectionId, delegate (NwkMessageTransaction waybackMessage)
     {
       // --- CALLBACK TRANSACTION
 
-      string fid = clientMsg.getHeader();
-      log("received uid from client : " + clientMsg.senderUid + " ; fid : " + fid);
-
-      NwkClientData data = addClient(clientMsg.senderUid, clientConnectionMessage.conn.connectionId); // server ref new client in list
+      log("received uid from client : " + waybackMessage.getIdCard().getMessageSender()+" , token ? "+waybackMessage.token);
+      
+      NwkClientData data = addClient(waybackMessage.getIdCard().getMessageSender(), clientConnectionMessage.conn.connectionId); // server ref new client in list
       data.setConnected(); // mark as connected
 
       //broadcast to all
-      NwkMessage msg = new NwkMessage();
-      msg.setupNwkType(NwkMessageType.CONNECTION);
-      msg.setSender(0);
+      NwkMessageFull msg = new NwkMessageFull();
+      msg.getIdCard().setupId(0, (int)eNwkMessageType.CONNECTION);
 
-      msg.setupHeader(clientMsg.senderUid.ToString()); // msg will contain new client uid
+      msg.setupHeader(waybackMessage.getIdCard().getMessageSender().ToString()); // msg will contain new client uid
 
       //send new client UID to everybody
       sendWrapper.broadcastServerToAll(msg, 0);
@@ -145,8 +146,7 @@ abstract public class NwkServer : NwkSystemBase
 
     });
 
-    log("asking to new client its uid");
-    log(outgoingMessage.toString());
+    //log("asking to new client its uid");
 
     //NwkUiView nView = qh.gc<NwkUiView>();
     //if (nView != null) nView.onConnection();
@@ -180,140 +180,94 @@ abstract public class NwkServer : NwkSystemBase
     }
   }
 
-  void OnMessageReceived(NetworkMessage netMessage)
+  void solveMessageSize(NwkMessageFull msg)
   {
-    //log("OnMessageReceived : "+netMessage.msgType);
-
-    // You can send any object that inherence from MessageBase
-    // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
-    // The first thing we do is deserialize the message to our custom type
-
-    NwkMessage incomingMessage = null;
-
-    try { incomingMessage = netMessage.ReadMessage<NwkMessage>(); }
-    catch { incomingMessage = null; }
-
-    if (incomingMessage == null)
-    {
-      log("server couldn't read standard NwkMesssage ; passing it on");
-      return;
-    }
+    if (msg == null) return;
 
     //solve size info
-    if (incomingMessage.messageBytes.Length > 0)
+    if (msg.messageBytes.Length > 0)
     {
-      int msgSize = incomingMessage.messageBytes.Length * 4;
+      int msgSize = msg.messageBytes.Length * 4;
       if (msgSize > 0)
       {
+        int nUid = msg.getIdCard().getMessageSender();
         //incoming message has sender ?
-        if (incomingMessage.senderUid > 0)
+        if (nUid > 0)
         {
-          getClientData(incomingMessage.senderUid).msgSizes.Add(msgSize);
+          getClientData(nUid).msgSizes.Add(msgSize);
         }
       }
     }
 
-    //scope is "who" need to treat the message
-    //scope of 0 is default integration
-    //scope != 0 -> pass on the message to whoever is capable of solving it
-    NwkMessageScope scope = (NwkMessageScope)incomingMessage.messageScope;
-
-    switch (scope)
-    {
-      case NwkMessageScope.BASIC:
-        solveBasicScope(incomingMessage, netMessage.conn.connectionId);
-        solveTransaction(incomingMessage);
-        break;
-      case NwkMessageScope.MODS:
-        break;
-      case NwkMessageScope.CUSTOM:
-        onNewNwkMessage(incomingMessage, netMessage.conn.connectionId);
-        break;
-      default: throw new NotImplementedException(scope.ToString());
-    }
-
   }
 
-  void solveBasicScope(NwkMessage msg, int senderConnectionId)
+  protected override void solveBasic(NwkMessageBasic message, int connID)
   {
-    log("client # " + msg.senderUid, msg.silentLogs);
-    //log(msg.toString(), msg.silentLogs);
+    log("client # " + message.getIdCard().getMessageSender() + " (" + message.ToString() + ")", message.isSilent());
 
-    //typ must be nulled (using none) to stop propagation
-
-    NwkMessageType typ = (NwkMessageType)msg.getMsgType();
-    switch (typ)
+    eNwkMessageType mtype = (eNwkMessageType)message.getIdCard().getMessageType();
+    switch (mtype)
     {
-      case NwkMessageType.CLT_DISCONNECTION_PONG:
-
-        log("received disconnection pong from " + msg.senderUid, msg.silentLogs);
-
-        //getClientData(msg.senderUid).resetTimeout();
-
-        break;
-      case NwkMessageType.PING: // client sent ping
-
-        if (!msg.silentLogs) log("received ping from " + msg.senderUid, msg.silentLogs);
+      case eNwkMessageType.PING: // client sent ping
 
         //ref timestamp to solve timeout
-        pingMessage(msg.senderUid);
+        pingMessage(message.getIdCard().getMessageSender());
 
-        // re-use message :shrug:
-        msg.clean();
+        //setup pong message
+        NwkMessageBasic bMessage = new NwkMessageBasic();
+        bMessage.getIdCard().setMessageType(eNwkMessageType.PONG);
 
-        msg.silentLogs = true;
-        msg.setupNwkType(NwkMessageType.PONG);
-        sendWrapper.sendServerAnswerToSpecificClient(msg, senderConnectionId);
+        //Send pong message
+        sendWrapper.sendToSpecificClient(bMessage, connID);
 
         break;
-      case NwkMessageType.DISCONNECTION:
+      case eNwkMessageType.DISCONNECTION:
 
-        getClientData(msg.senderUid).setAsDisconnected();
+        getClientData(message.getIdCard().getMessageSender()).setAsDisconnected();
 
         //msg.clean();
 
         break;
-      case NwkMessageType.SYNC:
+      case eNwkMessageType.NONE: break;
+      default: throw new NotImplementedException("base ; not implem " + mtype);
+    }
+  }
+
+  protected override void solveComplexe(NwkMessageComplexe message, int connID)
+  {
+    throw new NotImplementedException();
+  }
+
+  protected override void solveFull(NwkMessageFull message, int connID)
+  {
+    eNwkMessageType mtype = (eNwkMessageType)message.getIdCard().getMessageType();
+    switch (mtype)
+    {
+      case eNwkMessageType.SYNC:
 
         //send new data to everybody
         //also specify sender to be able to filter on the other end
-        sendWrapper.broadcastServerToAll(msg, msg.senderUid);
-
-        //sendWrapper.sendServerToSpecificClient
-
+        sendWrapper.broadcastServerToAll(message, message.getIdCard().getMessageSender());
         break;
-      case NwkMessageType.NONE: break;
-      case NwkMessageType.CONNECTION_PINGPONG:
-        //must implem for transaction of that type
-        break;
-      default: throw new NotImplementedException(typ.ToString());
+      case eNwkMessageType.NONE: break;
+      default: throw new NotImplementedException("full ; not implem " + mtype);
     }
-
   }
 
-  void pingMessage(short senderUid)
+  protected override void solveTransaction(NwkMessageTransaction message, int connID)
+  {
+    if (message == null) return;
+    log(listener.getStackCount() + " transaction(s) before solving");
+
+    listener.solveReceivedMessage(message); // check for pongs
+    log(listener.getStackCount() + " transaction(s) after solving");
+    log(listener.toString());
+  }
+
+  void pingMessage(int senderUid)
   {
     getClientData(senderUid).eventPing(Time.realtimeSinceStartup);
   }
-
-  void solveTransaction(NwkMessage msg)
-  {
-
-    if (msg.isTransactionMessage())
-    {
-      log(listener.getStackCount() + " transaction(s) before solving");
-
-      listener.solveReceivedMessage(msg); // check for pongs
-      log(listener.getStackCount() + " transaction(s) after solving");
-      log(listener.toString());
-    }
-  }
-
-  /// <summary>
-  /// how subcontext will solve message
-  /// connId = is id of msg sender
-  /// </summary>
-  abstract protected void onNewNwkMessage(NwkMessage msg, int connId);
 
   void broadcastDisconnectionPing()
   {
@@ -329,9 +283,8 @@ abstract public class NwkServer : NwkSystemBase
     //send a disconnection transaction to everyone
     //server will start timeout-ing all clients
     //and will stop timeout-ing everyclients that answers
-    NwkMessage msg = new NwkMessage();
-    msg.setSender(0);
-    msg.setupNwkType(NwkMessageType.SRV_DISCONNECTION_PING);
+    NwkMessageBasic msg = new NwkMessageBasic();
+    msg.getIdCard().setupId(0, (int)eNwkMessageType.SRV_DISCONNECTION_PING);
 
     sendWrapper.broadcastServerToAll(msg, 0);
 
@@ -344,7 +297,7 @@ abstract public class NwkServer : NwkSystemBase
   /// </summary>
   void cleanClientList()
   {
-    List<short> keys = new List<short>();
+    List<int> keys = new List<int>();
     for (int i = 0; i < clientDatas.Count; i++)
     {
       if (clientDatas[i].isDisconnected())

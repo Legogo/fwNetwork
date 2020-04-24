@@ -18,7 +18,7 @@ public class NwkSyncer : NwkMono
 
   static public NwkSyncer instance;
 
-  List<NwkMessage> stack = new List<NwkMessage>();
+  List<NwkMessageFull> stack = new List<NwkMessageFull>();
 
   //all objects that have capacities to sync son data
   List<NwkSyncableData> broadcasters = new List<NwkSyncableData>();
@@ -189,7 +189,7 @@ public class NwkSyncer : NwkMono
   /// <summary>
   /// bridge when receiving new message
   /// </summary>
-  public void applyMessage(NwkMessage msg)
+  public void applyMessage(NwkMessageFull msg)
   {
     string header = msg.getHeader();
     string[] split = header.Split(MSG_HEADER_SPEARATOR);
@@ -204,11 +204,11 @@ public class NwkSyncer : NwkMono
 
       short oType = short.Parse(split[1]);
 
-      data = solveUnknownData(msg.senderUid, iid, oType);
+      data = solveUnknownData(msg.getIdCard().getMessageSender(), iid, oType);
 
       if(data == null)
       {
-        log("don't have object " + msg.messageHeader + " sent by : " + msg.senderUid);
+        log("don't have object " + msg.messageHeader + " sent by : " + msg.getIdCard().getMessageSender());
       }
       
     }
@@ -223,7 +223,7 @@ public class NwkSyncer : NwkMono
     data.unpackMessage(msg); // tell object to treat inc data
   }
 
-  protected NwkSyncableData solveUnknownData(short cUID, short oIID, short oPID)
+  protected NwkSyncableData solveUnknownData(int cUID, int oIID, int oPID)
   {
     GameObject copy = factoryDb.copy(oPID);
 
@@ -287,27 +287,20 @@ public class NwkSyncer : NwkMono
   /// <summary>
   /// basic message for sync
   /// </summary>
-  static public NwkMessage nwkSyncInject(NwkSyncableData syncData)
+  static public NwkMessageFull nwkSyncInject(NwkSyncableData syncData)
   {
-    NwkMessage msg = new NwkMessage();
+    NwkMessageFull msg = new NwkMessageFull();
 
-    msg.senderUid = NwkClient.nwkUid;
-
-    msg.setupNwkType(NwkMessageType.SYNC);
+    msg.getIdCard().setupId(NwkClient.nwkUid, (int)eNwkMessageType.SYNC);
 
     //header is body of message (not sender uid)
     string header = syncData.idCard.syncIID.ToString();
 
     header += "-" + syncData.idCard.syncPID;
 
-    //header += "-"+syncData.handle.GetType();
-
     msg.setupHeader(header);
-    //msg.setupMessage(syncData.syncUid);
 
     msg.setupMessageData(syncData.handle.pack());
-
-    msg.silentLogs = true;
 
     return msg;
   }

@@ -61,7 +61,7 @@ abstract public class NwkClient : NwkSystemBase
     unetClient.Configure(config, 12);
 
     // Register the handlers for the different network messages
-    RegisterHandlers();
+    registerHandlers();
 
     if (!useLobbySystem())
     {
@@ -116,13 +116,17 @@ abstract public class NwkClient : NwkSystemBase
     sendWrapperClient = new NwkSendWrapperClient(unetClient);
   }
 
-  // Register the handlers for the different message types
-  void RegisterHandlers()
+  protected override void registerHandle(short messageID, NetworkMessageDelegate callback)
   {
-    // Unity have different Messages types defined in MsgType
-    unetClient.RegisterHandler(messageID, unetOnMessageReceived);
-    unetClient.RegisterHandler(MsgType.Connect, unetOnOtherConnected);
-    unetClient.RegisterHandler(MsgType.Disconnect, unetOnOtherDisconnected);
+    unetClient.RegisterHandler(messageID, callback);
+  }
+
+  protected override void registerHandlers()
+  {
+    base.registerHandlers();
+
+    unetClient.RegisterHandler(MsgType.Connect, unetConnected);
+    unetClient.RegisterHandler(MsgType.Disconnect, unetDisconnected);
   }
 
   public override void disconnect()
@@ -143,7 +147,9 @@ abstract public class NwkClient : NwkSystemBase
     log("this client is <b>sending disconnection message</b> to server ...");
 
     //tell server
-    NwkMessage msg = NwkMessage.getStandardMessage(nwkUid, NwkMessageType.DISCONNECTION);
+    NwkMessageComplexe msg = new NwkMessageComplexe();
+    msg.getIdCard().setupId(nwkUid, (int)eNwkMessageType.DISCONNECTION);
+
     sendWrapperClient.sendClientToServer(msg);
 
     //Debug.Log(unetClient.isConnected);
@@ -171,12 +177,11 @@ abstract public class NwkClient : NwkSystemBase
 
   protected override void onStateConnected()
   {
-    base.onStateConnected();
+    base.onStateConnected(); // update view
 
     //ref THIS client as connected in data
     getClientData(nwkUid).setConnected();
 
-    uiView?.setConnected(true);
   }
 
   protected override void onStateDisconnected()
@@ -188,9 +193,9 @@ abstract public class NwkClient : NwkSystemBase
     uiView?.setConnected(false);
   }
 
-  void unetOnOtherConnected(NetworkMessage message)
+  void unetConnected(NetworkMessage message)
   {
-    log("Client::OnConnected : " + message.msgType);
+    log(GetType()+ " unetConnected");
 
     getModule<NwkModPing>();
   }
@@ -198,9 +203,9 @@ abstract public class NwkClient : NwkSystemBase
   /// <summary>
   /// on OTHER CLIENT(s) disconnection
   /// </summary>
-  void unetOnOtherDisconnected(NetworkMessage message)
+  void unetDisconnected(NetworkMessage message)
   {
-    log("Client::OnDisconnected : " + message.msgType);
+    log(GetType()+ " unetDisconnected");
 
     //NwkMessage msg = convertMessage(message);
 
@@ -209,50 +214,33 @@ abstract public class NwkClient : NwkSystemBase
     //if (nView != null) nView.onDisconnection();
   }
 
-  // Message received from the server
-  void unetOnMessageReceived(NetworkMessage netMessage)
+  override protected void solveTransaction(NwkMessageTransaction message, int connID)
   {
-    Debug.Log(netMessage);
+    log("solving transaction : " + message.getIdCard().toString()+" => "+message.token);
 
-    NwkMessage incMessage = convertMessage(netMessage);
-
-    if (incMessage == null)
-    {
-      log("client couldn't read standard NwkMesssage");
-      return;
-    }
-
-    if (!incMessage.silentLogs)
-    {
-      log("Client::OnMessageReceived");
-      log(incMessage.toString());
-    }
-
-    NwkMessageScope scope = (NwkMessageScope)incMessage.messageScope;
-    switch (scope)
-    {
-      case NwkMessageScope.BASIC: solveBasicMessage(incMessage); break;
-      case NwkMessageScope.MODS: solveModsMessage(incMessage); break;
-      case NwkMessageScope.CUSTOM: solveCustomMessage(incMessage); break;
-      default: throw new NotImplementedException();
-    }
-
-  }
-
-  void solveBasicMessage(NwkMessage incMessage)
-  {
-
-    NwkMessageType mtype = (NwkMessageType)incMessage.getMsgType();
-
+    eNwkMessageType mtype = (eNwkMessageType)message.getIdCard().getMessageType();
     switch (mtype)
     {
-      case NwkMessageType.CONNECTION:
+      case eNwkMessageType.CONNECTION_PINGPONG: // received msg from server that is asking for uid
+        solvePingPong(message);
+        break;
+      case eNwkMessageType.NONE: break;
+      default: throw new NotImplementedException("transaction not implem " + mtype);
+    }
+  }
 
-        short broadcastedUid = short.Parse(incMessage.getHeader());
+  override protected void solveFull(NwkMessageFull message, int connID)
+  {
+    eNwkMessageType mtype = (eNwkMessageType)message.getIdCard().getMessageType();
+    switch (mtype)
+    {
+      case eNwkMessageType.CONNECTION:
+
+        int broadcastedUid = int.Parse(message.getHeader());
 
         if (broadcastedUid == nwkUid)
         {
-          log("just received server acknowledgement for uid : "+broadcastedUid);
+          log("just received server acknowledgement for uid : " + broadcastedUid);
 
           //server asked, we sent the answer ... connection ready ?
           onNetworkLinkReady();
@@ -260,88 +248,73 @@ abstract public class NwkClient : NwkSystemBase
         }
         else
         {
-
           log("just received info that client uid : " + broadcastedUid + " just connected");
-
         }
 
         break;
-      case NwkMessageType.CONNECTION_PINGPONG: // server is asking for uid
+      case eNwkMessageType.SYNC:
 
-        NwkMessage msg = new NwkMessage();
-        //msg.clean();
+        Debug.Log(Time.frameCount + " | " + message.getIdCard().getMessageSender() + " vs " + nwkUid);
 
-        msg.setSender(nwkUid);
-        msg.setupNwkType(NwkMessageType.CONNECTION_PINGPONG); // same type for transaction solving
-
-        string fid = nwkUid + ":" + nwkConnId;
-        msg.setupHeader(fid); // give local uid
-
-        msg.token = incMessage.token; // transfert token
-
-        sendWrapperClient.sendClientToServer(msg);
+        //si y a modif d'un objet local par un autre client il faut passer par un msg type : SYNC_ONCE !
+        if (message.getIdCard().getMessageSender() != NwkClient.nwkUid)
+        {
+          Debug.Log("  applied");
+          NwkSyncer.instance.applyMessage(message);
+        }
 
         break;
-      case NwkMessageType.PONG:
+
+      case eNwkMessageType.NONE: break;
+      default: throw new NotImplementedException("full not implem " + mtype);
+    }
+  }
+
+  override protected void solveComplexe(NwkMessageComplexe message, int connID)
+  {
+    eNwkMessageType mtype = (eNwkMessageType)message.getIdCard().getMessageType();
+    switch (mtype)
+    {
+      case eNwkMessageType.NONE: break;
+      default: throw new NotImplementedException("complexe not implem " + mtype);
+    }
+  }
+
+  override protected void solveBasic(NwkMessageBasic message, int connID)
+  {
+    eNwkMessageType mtype = (eNwkMessageType)message.getIdCard().getMessageType();
+
+    switch (mtype)
+    {
+      
+      case eNwkMessageType.PONG: // received a pong, do something with it
 
         //inject pong delta
         getClientData(NwkClient.nwkUid).eventPing(getModule<NwkModPing>().pong());
 
         break;
-      case NwkMessageType.SYNC:
 
-        Debug.Log(Time.frameCount + " | " + incMessage.senderUid + " vs " + nwkUid);
-
-        //si y a modif d'un objet local par un autre client il faut passer par un msg type : SYNC_ONCE !
-        if (incMessage.senderUid != NwkClient.nwkUid)
-        {
-          Debug.Log("  applied");
-          NwkSyncer.instance.applyMessage(incMessage);
-        }
-
-        break;
-      case NwkMessageType.NONE:
-        break;
-      default: throw new NotImplementedException("not implem : "+mtype);
+      case eNwkMessageType.NONE: break;
+      default: throw new NotImplementedException("basic not implem "+mtype);
     }
 
   }
 
-  void solveModsMessage(NwkMessage incMessage)
+  void solvePingPong(NwkMessageTransaction message)
   {
-    NwkMessageMods mt = (NwkMessageMods)incMessage.getMsgType();
-    switch (mt)
-    {
-      case NwkMessageMods.NONE:
-        break;
-      default: throw new NotImplementedException();
-    }
+    
+    NwkMessageTransaction trans = new NwkMessageTransaction();
+    //msg.clean();
 
-  }
+    NwkMessageTransaction original = message as NwkMessageTransaction;
 
-  void solveCustomMessage(NwkMessage incMessage)
-  {
-    onNwkMessageScopeChange(incMessage);
-  }
+    trans.getIdCard().setupId(nwkUid, (int)eNwkMessageType.CONNECTION_PINGPONG); // same type for transaction solving
 
-  NwkMessage convertMessage(NetworkMessage netMessage)
-  {
+    trans.token = original.token; // transfert token
 
-    // You can send any object that inherence from MessageBase
-    // The client and server can be on different projects, as long as the MyNetworkMessage or the class you are using have the same implementation on both projects
-    // The first thing we do is deserialize the message to our custom type
+    log("server asked for pong, processing ; token : "+trans.token);
 
-    NwkMessage incomingMessage = null;
-    try
-    {
-      incomingMessage = netMessage.ReadMessage<NwkMessage>();
-    }
-    catch
-    {
-      incomingMessage = null;
-    }
-
-    return incomingMessage;
+    sendWrapperClient.sendClientToServer(trans);
   }
 
   /// <summary>
@@ -367,7 +340,7 @@ abstract public class NwkClient : NwkSystemBase
     log("network link is ready , solved network fid is : " + fullId);
   }
 
-  abstract protected void onNwkMessageScopeChange(NwkMessage nwkMsg);
+  abstract protected void onNwkMessageScopeChange(NwkMessageCustom nwkMsg);
 
   public override bool isConnected()
   {

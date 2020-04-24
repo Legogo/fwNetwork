@@ -11,7 +11,7 @@ public class NwkModPing : NwkModuleClient
   float pingTimer = 0f;
   float pingItv = 1f;
 
-  NwkMessage msg;
+  NwkMessageBasic pingMessage;
 
   //public Action<float> onPong;
 
@@ -23,9 +23,8 @@ public class NwkModPing : NwkModuleClient
   {
     base.setup();
 
-    msg = new NwkMessage();
-    msg.silentLogs = true; // dont log
-    msg.setupNwkType(NwkMessageType.PING);
+    pingMessage = new NwkMessageBasic();
+    pingMessage.getIdCard().setMessageType(eNwkMessageType.PING);
     
     pingTimer = pingItv;
 
@@ -58,10 +57,8 @@ public class NwkModPing : NwkModuleClient
   {
     _pingTime = Time.realtimeSinceStartup;
 
-    //_client.log("ping at "+_pingTime);
-
-    //_client.sendClient.sendServerToClientTransaction(msg, _client.client.connection.connectionId, pong);
-    _client.sendWrapperClient.sendClientToServer(msg);
+    pingMessage.getIdCard().setMessageSender(NwkClient.nwkUid);
+    _client.sendWrapperClient.sendClientToServer(pingMessage);
   }
 
   public int pong()
