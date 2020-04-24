@@ -191,7 +191,7 @@ public class NwkSyncer : NwkMono
   /// </summary>
   public void applyMessage(NwkMessageFull msg)
   {
-    string header = msg.getHeader();
+    string header = msg.header.getHeader();
     string[] split = header.Split(MSG_HEADER_SPEARATOR);
 
     short iid = short.Parse(split[0]);
@@ -208,7 +208,7 @@ public class NwkSyncer : NwkMono
 
       if(data == null)
       {
-        log("don't have object " + msg.messageHeader + " sent by : " + msg.getIdCard().getMessageSender());
+        log("don't have object " + msg.header.getHeader() + " sent by : " + msg.getIdCard().getMessageSender());
       }
       
     }
@@ -298,9 +298,9 @@ public class NwkSyncer : NwkMono
 
     header += "-" + syncData.idCard.syncPID;
 
-    msg.setupHeader(header);
+    msg.header.setupHeader(header);
 
-    msg.setupMessageData(syncData.handle.pack());
+    msg.bytes.setupByteData(syncData.handle.pack());
 
     return msg;
   }

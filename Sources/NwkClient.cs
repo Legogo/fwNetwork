@@ -236,7 +236,7 @@ abstract public class NwkClient : NwkSystemBase
     {
       case eNwkMessageType.CONNECTION:
 
-        int broadcastedUid = int.Parse(message.getHeader());
+        int broadcastedUid = int.Parse(message.header.getHeader());
 
         if (broadcastedUid == nwkUid)
         {
@@ -339,8 +339,6 @@ abstract public class NwkClient : NwkSystemBase
     
     log("network link is ready , solved network fid is : " + fullId);
   }
-
-  abstract protected void onNwkMessageScopeChange(NwkMessageCustom nwkMsg);
 
   public override bool isConnected()
   {

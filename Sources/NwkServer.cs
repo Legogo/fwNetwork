@@ -137,7 +137,7 @@ abstract public class NwkServer : NwkSystemBase
       NwkMessageFull msg = new NwkMessageFull();
       msg.getIdCard().setupId(0, (int)eNwkMessageType.CONNECTION);
 
-      msg.setupHeader(waybackMessage.getIdCard().getMessageSender().ToString()); // msg will contain new client uid
+      msg.header.setupHeader(waybackMessage.getIdCard().getMessageSender().ToString()); // msg will contain new client uid
 
       //send new client UID to everybody
       sendWrapper.broadcastServerToAll(msg, 0);
@@ -185,9 +185,9 @@ abstract public class NwkServer : NwkSystemBase
     if (msg == null) return;
 
     //solve size info
-    if (msg.messageBytes.Length > 0)
+    if (msg.bytes.messageBytes.Length > 0)
     {
-      int msgSize = msg.messageBytes.Length * 4;
+      int msgSize = msg.bytes.messageBytes.Length * 4;
       if (msgSize > 0)
       {
         int nUid = msg.getIdCard().getMessageSender();

@@ -8,10 +8,10 @@ public class NwkMessageTransaction : MessageBase, iNwkMessageId
   public const short MSG_ID_TRANSACTION = MsgType.Highest + 4;
   public short getMessageId() => MSG_ID_TRANSACTION;
 
-  public NwkMessageIdCard id;
-  public NwkMessageIdCard getIdCard()
+  public NwkMessageModIdCard id;
+  public NwkMessageModIdCard getIdCard()
   {
-    if (id == null) id = new NwkMessageIdCard();
+    if (id == null) id = new NwkMessageModIdCard();
     return id;
   }
 

@@ -10,10 +10,10 @@ public class NwkMessageComplexe : MessageBase, iNwkMessageId
 
   public bool isSilent() => true;
 
-  NwkMessageIdCard id;
-  public NwkMessageIdCard getIdCard()
+  NwkMessageModIdCard id;
+  public NwkMessageModIdCard getIdCard()
   {
-    if (id == null) id = new NwkMessageIdCard();
+    if (id == null) id = new NwkMessageModIdCard();
     return id;
   }
 

@@ -116,17 +116,21 @@ abstract public class NwkSystemBase : MonoBehaviour
     registerHandle(NwkMessageComplexe.MSG_ID_COMPLEXE, unetOnMessageComplexe);
     registerHandle(NwkMessageTransaction.MSG_ID_TRANSACTION, unetOnMessageTransaction);
     registerHandle(NwkMessageFull.MSG_ID_FULL, unetOnMessageFull);
+
+    registerHandle(NwkMessageCustom.MSG_ID_CUSTOM, unetOnMessageCustom);
   }
 
   void unetOnMessageBasic(NetworkMessage netMessage) => solveBasic(netMessage.ReadMessage<NwkMessageBasic>(), netMessage.conn.connectionId);
   void unetOnMessageComplexe(NetworkMessage netMessage) => solveComplexe(netMessage.ReadMessage<NwkMessageComplexe>(), netMessage.conn.connectionId);
   void unetOnMessageTransaction(NetworkMessage netMessage) => solveTransaction(netMessage.ReadMessage<NwkMessageTransaction>(), netMessage.conn.connectionId);
   void unetOnMessageFull(NetworkMessage netMessage) => solveFull(netMessage.ReadMessage<NwkMessageFull>(), netMessage.conn.connectionId);
+  void unetOnMessageCustom(NetworkMessage netMessage) => solveCustom(netMessage.ReadMessage<NwkMessageCustom>(), netMessage.conn.connectionId);
 
   abstract protected void solveBasic(NwkMessageBasic message, int connID);
   abstract protected void solveComplexe(NwkMessageComplexe message, int connID);
   abstract protected void solveTransaction(NwkMessageTransaction message, int connID);
   abstract protected void solveFull(NwkMessageFull message, int connID);
+  abstract protected void solveCustom(NwkMessageCustom message, int connID);
 
   virtual protected void onStateConnected()
   {

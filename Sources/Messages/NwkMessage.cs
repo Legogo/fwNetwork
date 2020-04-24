@@ -1,4 +1,7 @@
 ﻿
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
+
 /// <summary>
 /// can't serialize short ?
 /// https://forum.unity.com/threads/serialize-short-ushort-etc.150952/
@@ -23,12 +26,13 @@ public interface iNwkMessage
 
 public interface iNwkMessageId : iNwkMessage
 {
-  NwkMessageIdCard getIdCard();
+  NwkMessageModIdCard getIdCard();
   bool isSilent();
+  
 }
 
 [System.Serializable]
-public class NwkMessageIdCard
+public class NwkMessageModIdCard
 {
 
   public int type;
@@ -49,4 +53,51 @@ public class NwkMessageIdCard
   public int getMessageSender() => sender;
 
   public string toString() => sender + "||" + type;
+}
+
+[System.Serializable]
+public class NwkMessageModBytes
+{
+  //data to transfert
+  public byte[] messageBytes;
+
+  public void setupByteData(object obj) => messageBytes = serializeObject(obj);
+  public object getMessage()
+  {
+    //needed in debug ctx
+    if (messageBytes == null) return null;
+    return deserializeObject(messageBytes);
+  }
+
+
+  public static byte[] serializeObject(object obj)
+  {
+    MemoryStream stream = new MemoryStream();
+    BinaryFormatter bf = new BinaryFormatter();
+
+    bf.Serialize(stream, obj);
+
+    return stream.GetBuffer();
+  }
+
+  public static object deserializeObject(byte[] buffer)
+  {
+    MemoryStream stream = new MemoryStream(buffer);
+    BinaryFormatter bf = new BinaryFormatter();
+
+    return bf.Deserialize(stream);
+  }
+
+}
+
+[System.Serializable]
+public class NwkMessageModHeader
+{
+
+  //string to transfert
+  public string messageHeader = ""; // the actual message
+
+  public void setupHeader(string header) => messageHeader = header;
+  public string getHeader() => messageHeader;
+
 }
