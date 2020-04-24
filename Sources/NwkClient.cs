@@ -48,7 +48,7 @@ abstract public class NwkClient : NwkSystemBase
 
   void CreateClient()
   {
-    Debug.Log("NwkClient creating client");
+    Debug.Log(GetType()+" creating client ... ");
 
     var config = new ConnectionConfig();
 
@@ -254,9 +254,11 @@ abstract public class NwkClient : NwkSystemBase
         break;
       case eNwkMessageType.SYNC:
 
+        //if match then it's mine, dont do anything with it
+        //si y a modif d'un objet local par un autre client il faut passer par un msg type : SYNC_ONCE !
+
         Debug.Log(Time.frameCount + " | " + message.getIdCard().getMessageSender() + " vs " + nwkUid);
 
-        //si y a modif d'un objet local par un autre client il faut passer par un msg type : SYNC_ONCE !
         if (message.getIdCard().getMessageSender() != NwkClient.nwkUid)
         {
           Debug.Log("  applied");
