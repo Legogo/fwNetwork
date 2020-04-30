@@ -53,7 +53,7 @@ public class NwkMessageModIdCard
   public void setMessageSender(int newNwkUid) => sender = newNwkUid;
   public int getMessageSender() => sender;
 
-  public string toString() => sender + "||" + type;
+  public string toString() => sender + " | " + ((eNwkMessageType)type).ToString();
 }
 
 [System.Serializable]

@@ -261,7 +261,7 @@ abstract public class NwkClient : NwkSystemBase
         //if match then it's mine, dont do anything with it
         //si y a modif d'un objet local par un autre client il faut passer par un msg type : SYNC_ONCE !
 
-        Debug.Log(Time.frameCount + " | " + message.getIdCard().getMessageSender() + " vs " + nwkUid);
+        //Debug.Log(Time.frameCount + " | " + message.getIdCard().getMessageSender() + " vs " + nwkUid);
 
         if (message.getIdCard().getMessageSender() != NwkClient.nwkUid)
         {
