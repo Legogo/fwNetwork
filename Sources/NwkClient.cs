@@ -179,9 +179,13 @@ abstract public class NwkClient : NwkSystemBase
   {
     base.onStateConnected(); // update view
 
+    //Debug.Log(GetType() + " " + nwkUid + " CONNECTED");
+
     //ref THIS client as connected in data
     getClientData(nwkUid).setConnected();
 
+    //tick reset is made in base() parent
+    //tick.resetTickCount();
   }
 
   protected override void onStateDisconnected()
@@ -268,6 +272,8 @@ abstract public class NwkClient : NwkSystemBase
         break;
 
       case eNwkMessageType.TICK:
+
+        Debug.Log(Time.frameCount+" received tick data");
 
         float pingToMs = NwkClient.nwkClient.getModule<NwkModPing>().getRawPing();
 

@@ -22,6 +22,8 @@ public class NwkTick : NwkModule
 
     if (NwkSystemBase.isClient())
     {
+      Debug.Log("client is connected, asking to server for tick data");
+
       NwkMessageBasic mb = new NwkMessageBasic();
       mb.getIdCard().setupId(NwkClient.nwkUid, (int)eNwkMessageType.TICK);
       NwkClient.nwkClient.sendWrapperClient.sendClientToServer(mb);
@@ -51,7 +53,7 @@ public class NwkTick : NwkModule
 
     data.tickRateTimer = servTickTimer + offsetTimeDelta;
 
-    log("tickrate setup : " + data.tick + " / " + data.tickRate+" | total offset : "+ offsetTimeDelta);
+    log("tickrate setup : " + data.tick + " / " + data.tickRate+" | <b>total offset</b> : "+ offsetTimeDelta);
   }
 
   protected override void updateNwk()

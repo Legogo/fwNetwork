@@ -95,6 +95,7 @@ abstract public class NwkServer : NwkSystemBase
 
     //nwkUiView.setLabel(GetType().ToString());
 
+    tick.resetTickCount(); // server starts counting, client query for data
   }
 
   public override void disconnect()
@@ -241,6 +242,8 @@ abstract public class NwkServer : NwkSystemBase
       case eNwkMessageType.TICK:
 
         //send tick data
+
+        log("sending tick data to " + connID);
 
         NwkMessageFull mf = new NwkMessageFull();
         mf.getIdCard().setupId(0, (int)eNwkMessageType.TICK);

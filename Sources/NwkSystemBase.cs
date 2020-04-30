@@ -29,7 +29,6 @@ abstract public class NwkSystemBase : MonoBehaviour
     nwkSys = this;
 
     tick = getModule<NwkTick>();
-    tick.resetTickCount(); // server starts counting, client query for data
 
     //sendWrapper = generateSendWrapper();
     
@@ -193,6 +192,8 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   public void log(string ct, bool silent = false)
   {
+    if (NwkClient.isClient()) ct = NwkClient.nwkUid + " " + ct;
+
     Debug.Log(ct);
 
     if (uiView == null)
@@ -247,7 +248,7 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   abstract public void disconnect();
   abstract public void connect();
-  abstract public bool isConnected();
+  abstract public bool isConnected(); // server has wrapper to send msg
 
   static public bool isClient() => NwkClient.nwkClient != null;
   static public bool isServer() => NwkServer.nwkServer != null;
