@@ -14,6 +14,8 @@ public class NwkUiView : MonoBehaviour
   public Button btnConnect;
   public Image stConnection;
 
+  public Text txtTick;
+
   [Header("logs list")]
   public Text txtRaw;
   public Text txtLogs;

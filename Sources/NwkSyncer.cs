@@ -300,7 +300,7 @@ public class NwkSyncer : NwkMono
 
     msg.header.setupHeader(header);
 
-    msg.bytes.setupByteData(syncData.handle.pack());
+    msg.bytes.setByteData(syncData.handle.pack());
 
     return msg;
   }

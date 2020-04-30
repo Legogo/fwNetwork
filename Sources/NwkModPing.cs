@@ -77,6 +77,14 @@ public class NwkModPing : NwkModuleClient
     //if(onPong != null) onPong(dlt);
   }
 
+  /// <summary>
+  /// in secondes
+  /// </summary>
+  public float getRawPing() => _lastDelta;
+  
+  /// <summary>
+  /// in millisec
+  /// </summary>
   public int getCurrentPing() => getMilliSec(_lastDelta);
 
   static public int getMilliSec(float dlt)

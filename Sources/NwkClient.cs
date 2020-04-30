@@ -267,6 +267,15 @@ abstract public class NwkClient : NwkSystemBase
 
         break;
 
+      case eNwkMessageType.TICK:
+
+        float pingToMs = NwkClient.nwkClient.getModule<NwkModPing>().getRawPing();
+
+        TickData td = (TickData)message.bytes.getObjectFromByteData();
+        getModule<NwkTick>().setupTick(td.tickRate, td.tick, td.tickRateTimer, pingToMs);
+
+        break;
+
       case eNwkMessageType.NONE: break;
       default: throw new NotImplementedException("full not implem " + mtype);
     }

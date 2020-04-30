@@ -40,7 +40,7 @@ abstract public class NwkModule : NwkMono
     }
   }
 
-  abstract protected bool canUpdate();
+  virtual protected bool canUpdate() { return true; }
 
   virtual protected void updateNwk()
   { }

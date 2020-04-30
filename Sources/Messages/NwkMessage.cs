@@ -16,7 +16,8 @@ public enum eNwkMessageType
   SRV_DISCONNECTION_PING, CLT_DISCONNECTION_PONG = 5, // server broadcast ping ; all connected client must answer pong
   ASSIGN_ID = 6,
   PING = 7, PONG = 8, // ping module
-  SYNC, SYNC_ONCE // syncables ; only for server to receive and keep track of data (NOT client <-> client)
+  SYNC, SYNC_ONCE, // syncables ; only for server to receive and keep track of data (NOT client <-> client)
+  TICK = 10
 };
 
 public interface iNwkMessage
@@ -61,8 +62,8 @@ public class NwkMessageModBytes
   //data to transfert
   public byte[] messageBytes;
 
-  public void setupByteData(object obj) => messageBytes = serializeObject(obj);
-  public object getMessage()
+  public void setByteData(object obj) => messageBytes = serializeObject(obj);
+  public object getObjectFromByteData()
   {
     //needed in debug ctx
     if (messageBytes == null) return null;

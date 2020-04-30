@@ -24,6 +24,8 @@ abstract public class NwkServer : NwkSystemBase
 
     Screen.SetResolution(1280, 720, false);
 
+    //tick.resetTickCount();
+
     Debug.LogWarning("================== <b>SERVER</b> ==================");
   }
 
@@ -92,6 +94,7 @@ abstract public class NwkServer : NwkSystemBase
     sendWrapper = new NwkSendWrapperServer();
 
     //nwkUiView.setLabel(GetType().ToString());
+
   }
 
   public override void disconnect()
@@ -164,13 +167,16 @@ abstract public class NwkServer : NwkSystemBase
     broadcastDisconnectionPing();
   }
 
+  virtual protected void onTick(int tick)
+  { }
+
   protected override void updateNetwork()
   {
     base.updateNetwork();
 
     //check for stuff in clients
 
-    float dlt;
+    //float dlt;
     for (int i = 0; i < clientDatas.Count; i++)
     {
       if(clientDatas[i].updateTimeout(Time.realtimeSinceStartup))
@@ -178,6 +184,8 @@ abstract public class NwkServer : NwkSystemBase
         log(clientDatas[i].nwkUid + " timeout !");
       }
     }
+
+
   }
 
   void solveMessageSize(NwkMessageFull msg)
@@ -204,6 +212,8 @@ abstract public class NwkServer : NwkSystemBase
   protected override void solveBasic(NwkMessageBasic message, int connID)
   {
     log("client # " + message.getIdCard().getMessageSender() + " (" + message.ToString() + ")", message.isSilent());
+    
+    NwkMessageBasic bMessage;
 
     eNwkMessageType mtype = (eNwkMessageType)message.getIdCard().getMessageType();
     switch (mtype)
@@ -214,7 +224,7 @@ abstract public class NwkServer : NwkSystemBase
         pingMessage(message.getIdCard().getMessageSender());
 
         //setup pong message
-        NwkMessageBasic bMessage = new NwkMessageBasic();
+        bMessage = new NwkMessageBasic();
         bMessage.getIdCard().setMessageType(eNwkMessageType.PONG);
 
         //Send pong message
@@ -226,6 +236,17 @@ abstract public class NwkServer : NwkSystemBase
         getClientData(message.getIdCard().getMessageSender()).setAsDisconnected();
 
         //msg.clean();
+
+        break;
+      case eNwkMessageType.TICK:
+
+        //send tick data
+
+        NwkMessageFull mf = new NwkMessageFull();
+        mf.getIdCard().setupId(0, (int)eNwkMessageType.TICK);
+        mf.bytes.setByteData(getModule<NwkTick>().data);
+
+        sendWrapper.sendToSpecificClient(mf, connID);
 
         break;
       case eNwkMessageType.NONE: break;

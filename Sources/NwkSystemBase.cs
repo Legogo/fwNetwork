@@ -22,10 +22,14 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   bool _localConnectionStatus = false;
 
+  protected NwkTick tick;
 
   virtual protected void Awake()
   {
     nwkSys = this;
+
+    tick = getModule<NwkTick>();
+    tick.resetTickCount(); // server starts counting, client query for data
 
     //sendWrapper = generateSendWrapper();
     
@@ -137,6 +141,8 @@ abstract public class NwkSystemBase : MonoBehaviour
     Debug.Log("<b>"+GetType() + " connected !</b>");
 
     uiView?.setConnected(true);
+
+    tick.resetTickCount();
   }
 
   virtual protected void onStateDisconnected()
@@ -145,7 +151,14 @@ abstract public class NwkSystemBase : MonoBehaviour
   }
 
   virtual protected void updateNetwork()
-  { }
+  {
+
+    if(uiView != null && tick != null)
+    {
+      uiView.txtTick.text = tick.getTickCount().ToString();
+    }
+    
+  }
 
   protected NwkClientData addClient(int newUid, int newConnId = -1)
   {

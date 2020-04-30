@@ -60,7 +60,7 @@ public class NwkSyncableData
   public void forceSend() => _sendTimer = _sendFrequency - 0.000001f; // next frame !
 
   public NwkMessageFull packMessage() => NwkSyncer.nwkSyncInject(this);
-  public void unpackMessage(NwkMessageFull msg) => handle.unpack(msg.bytes.getMessage());
+  public void unpackMessage(NwkMessageFull msg) => handle.unpack(msg.bytes.getObjectFromByteData());
 
   public NwkSyncableData overrideData(int nwkClientUID, int IID, int PID)
   {
