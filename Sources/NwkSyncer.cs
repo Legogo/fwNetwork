@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.EventSystems;
+using System.Reflection;
 
 /// <summary>
 /// bridge entre client <-> server et les INwkSyncable(s)
@@ -192,7 +194,7 @@ public class NwkSyncer : NwkMono
   public void applyMessage(NwkMessageFull msg)
   {
     string header = msg.header.getHeader();
-    string[] split = header.Split(MSG_HEADER_SPEARATOR);
+    string[] split = header.Split(MSG_HEADER_SPEARATOR); // IID , CONN ID ?
 
     short iid = short.Parse(split[0]);
 
@@ -233,26 +235,85 @@ public class NwkSyncer : NwkMono
       return null;
     }
 
-    copy.name = oIID.ToString();
+    copy.name += oIID.ToString();
 
     Debug.Log(Time.frameCount + " => copy ? " + copy);
 
-    INwkSyncable sync = copy.GetComponent<INwkSyncable>();
-    if (sync == null) sync = copy.GetComponentInChildren<INwkSyncable>();
+    //find ref of component of that sync in newly created object
+    NwkSyncableData curSyncData = null;
+    INwkSyncable sync = filterSyncableOnInstance(copy, factoryDb.items[oPID].type);
 
-    if(sync == null)
+    if (sync == null)
     {
       Debug.LogError("no sync found in copy ?");
       return null;
     }
 
-    //copy object will create it's own data during constructor
-    //but won't have owner info yet
-    NwkSyncableData data = sync.getData().overrideData(cUID, oIID, oPID);
-    
-    Debug.Log(Time.frameCount+" => data ? " + data);
+    //forcing object to generate it's data
+    curSyncData = sync.getData();
 
-    return data;
+    //but won't have owner info yet, so we need to inject id info here
+    //inject none-local stuff
+    curSyncData.overrideData(cUID, oIID, oPID);
+
+    Debug.Log(Time.frameCount + " => data ? " + curSyncData);
+
+    bubbleSyncableToListeners(copy, sync);
+
+    return curSyncData;
+  }
+
+  /// <summary>
+  /// en l'état il faut que le couple Compo,Inwk soit unique dans toute la hierarchie
+  /// </summary>
+  INwkSyncable filterSyncableOnInstance(GameObject copy, string factoType)
+  {
+    //https://stackoverflow.com/questions/11107536/convert-string-to-type-in-c-sharp
+    Type _type = Type.GetType(factoType);
+
+    //gather all syncable in newly created object
+    List<INwkSyncable> all = new List<INwkSyncable>();
+    all.AddRange(copy.GetComponentsInChildren<INwkSyncable>());
+    all.AddRange(copy.GetComponentsInParent<INwkSyncable>());
+
+    for (int i = 0; i < all.Count; i++)
+    {
+      Debug.Log("  L " + _type.GetType() + " vs " + all[i].GetType());
+
+      if(compareType(all[i].GetType(), _type))
+      {
+        INwkSyncable tmp = all[i] as INwkSyncable;
+        if (tmp != null) return tmp;
+      }
+    }
+
+    return null;
+  }
+
+  void bubbleSyncableToListeners(GameObject copy, INwkSyncable sync)
+  {
+    List<INwkSyncListener> all = new List<INwkSyncListener>();
+    all.AddRange(copy.GetComponentsInChildren<INwkSyncListener>());
+    all.AddRange(copy.GetComponentsInParent<INwkSyncListener>());
+
+    for (int i = 0; i < all.Count; i++)
+    {
+      all[i].evtINwkScopeChange(sync, false);
+    }
+
+  }
+
+  /// <summary>
+  /// https://stackoverflow.com/questions/708205/c-sharp-object-type-comparison
+  /// https://github.com/Legogo/fwProtoss/blob/master/Sources/Halpers/HalperType.cs
+  /// </summary>
+  /// <param name="a"></param>
+  /// <param name="b"></param>
+  /// <returns></returns>
+  static public bool compareType(Type a, Type b, bool strict = false)
+  {
+    if (!strict) return a.IsAssignableFrom(b) || b.IsAssignableFrom(a);
+    return a == b;
   }
 
   NwkSyncableData getDataByIID(short iid)

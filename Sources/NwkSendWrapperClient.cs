@@ -21,7 +21,11 @@ public class NwkSendWrapperClient : NwkSendWrapper
   {
     Debug.Assert(message != null, "no message given ?");
 
-    NwkSystemBase.nwkSys.log("<b>sending "+message.GetType()+"</b> | " + message.getIdCard().toString());
+    //bool silent = false;
+    //NwkMessageFull mFull = message as NwkMessageFull;
+    //if (mFull != null) silent = mFull.isSilent();
+
+    NwkSystemBase.nwkSys.log("<b>sending "+message.GetType()+"</b> | " + message.getIdCard().toString(), message.isSilent());
     
     Debug.Assert((message as MessageBase) != null, "can't cast message to unet type ?");
 

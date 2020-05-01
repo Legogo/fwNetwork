@@ -23,13 +23,12 @@ public enum eNwkMessageType
 public interface iNwkMessage
 {
   short getMessageId();
+  bool isSilent();
 }
 
 public interface iNwkMessageId : iNwkMessage
 {
   NwkMessageModIdCard getIdCard();
-  bool isSilent();
-  
 }
 
 [System.Serializable]

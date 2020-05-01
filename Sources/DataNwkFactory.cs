@@ -19,18 +19,18 @@ using UnityEditor.SceneManagement;
 public class DataNwkFactory : ScriptableObject
 {
 
-  public GameObject[] items;
-  //public NwkFactoryItem[] items;
+  //public GameObject[] items;
+  public NwkFactoryItem[] items;
 
   public GameObject copy(int typeIndex)
   {
 
-    if(items.Length < typeIndex)
+    if(typeIndex < items.Length)
     {
-      return GameObject.Instantiate(items[typeIndex]);
+      return GameObject.Instantiate(items[typeIndex].prefab);
     }
 
-    Debug.LogWarning("no object for index " + typeIndex + " in factory");
+    Debug.LogWarning("no object for index " + typeIndex + " in factory of total count : "+items.Length);
 
     return null;
   }
@@ -39,7 +39,7 @@ public class DataNwkFactory : ScriptableObject
   {
     for (short i = 0; i < items.Length; i++)
     {
-      if(items[i].name == tr.name)
+      if(items[i].prefab.name == tr.name)
       {
         return i;
       }
@@ -49,7 +49,7 @@ public class DataNwkFactory : ScriptableObject
 
   public string getItemName(short index)
   {
-    return items[index].name;
+    return items[index].prefab.name;
   }
 }
 

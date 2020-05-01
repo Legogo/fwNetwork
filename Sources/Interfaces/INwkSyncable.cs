@@ -4,7 +4,6 @@ using UnityEngine;
 
 public interface INwkSyncable
 {
-  
   //bytes stuff
   object pack(); // generate an object with all data to sync
 
@@ -33,6 +32,7 @@ static public class INwkExtensions
   }
 
   /// <summary>
+  /// generic signature to be called in getData of syncables
   /// meant to pass specific balancing data on object generation
   /// DO NOT MANAGE idcard
   /// </summary>

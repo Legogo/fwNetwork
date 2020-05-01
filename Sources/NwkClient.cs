@@ -244,7 +244,8 @@ abstract public class NwkClient : NwkSystemBase
 
         if (broadcastedUid == nwkUid)
         {
-          log("just received server acknowledgement for uid : " + broadcastedUid);
+          log("just received confirmation from server form local client connection");
+          log(nwkUid+" VS " + broadcastedUid);
 
           //server asked, we sent the answer ... connection ready ?
           onNetworkLinkReady();
@@ -261,11 +262,11 @@ abstract public class NwkClient : NwkSystemBase
         //if match then it's mine, dont do anything with it
         //si y a modif d'un objet local par un autre client il faut passer par un msg type : SYNC_ONCE !
 
-        //Debug.Log(Time.frameCount + " | " + message.getIdCard().getMessageSender() + " vs " + nwkUid);
+        //Debug.Log(Time.frameCount + " | SYNC | " + message.getIdCard().getMessageSender() + " VS " + nwkUid);
 
         if (message.getIdCard().getMessageSender() != NwkClient.nwkUid)
         {
-          Debug.Log("  applied");
+          Debug.Log("  --> not mine, applying nwk data to local context");
           NwkSyncer.instance.applyMessage(message);
         }
 
@@ -273,7 +274,7 @@ abstract public class NwkClient : NwkSystemBase
 
       case eNwkMessageType.TICK:
 
-        Debug.Log(Time.frameCount+" received tick data");
+        //Debug.Log(Time.frameCount+" received tick data");
 
         float pingToMs = NwkClient.nwkClient.getModule<NwkModPing>().getRawPing();
 
