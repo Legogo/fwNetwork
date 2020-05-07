@@ -11,7 +11,7 @@ using UnityEngine.Networking;
 public class NwkMessageFull : MessageBase, iNwkMessageId
 {
   public const short MSG_ID_FULL = MsgType.Highest + 5;
-  public short getMessageId() => MSG_ID_FULL;
+  public short getMessageUnetId() => MSG_ID_FULL;
 
   public NwkMessageModHeader header;
   public NwkMessageModBytes bytes;

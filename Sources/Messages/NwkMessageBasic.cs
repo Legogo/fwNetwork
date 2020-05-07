@@ -4,7 +4,7 @@
 public class NwkMessageBasic : MessageBase, iNwkMessageId
 {
   public const short MSG_ID_BASIC = MsgType.Highest + 1;
-  public short getMessageId() => MSG_ID_BASIC;
+  public short getMessageUnetId() => MSG_ID_BASIC;
 
   public NwkMessageModIdCard id;
   public NwkMessageModIdCard getIdCard()

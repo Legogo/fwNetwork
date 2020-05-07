@@ -100,6 +100,9 @@ abstract public class NwkServer : NwkSystemBase
 
   public override void disconnect()
   {
+    //kick all clients
+    //...
+
     NetworkServer.Shutdown();
   }
 
@@ -186,7 +189,6 @@ abstract public class NwkServer : NwkSystemBase
       }
     }
 
-
   }
 
   void solveMessageSize(NwkMessageFull msg)
@@ -212,7 +214,7 @@ abstract public class NwkServer : NwkSystemBase
 
   protected override void solveBasic(NwkMessageBasic message, int connID)
   {
-    log("client # " + message.getIdCard().getMessageSender() + " (" + message.ToString() + ")", message.isSilent());
+    log("basic : " + message.getIdCard().toString(), message.isSilent());
     
     NwkMessageBasic bMessage;
 
@@ -227,6 +229,8 @@ abstract public class NwkServer : NwkSystemBase
         //setup pong message
         bMessage = new NwkMessageBasic();
         bMessage.getIdCard().setMessageType(eNwkMessageType.PONG);
+
+        //log("sending pong to " + connID + " , " + message.getIdCard().getMessageSender());
 
         //Send pong message
         sendWrapper.sendToSpecificClient(bMessage, connID);
@@ -264,6 +268,8 @@ abstract public class NwkServer : NwkSystemBase
 
   protected override void solveFull(NwkMessageFull message, int connID)
   {
+    log("msg "+message.getIdCard().toString(), message.isSilent());
+
     eNwkMessageType mtype = (eNwkMessageType)message.getIdCard().getMessageType();
     switch (mtype)
     {
@@ -348,5 +354,10 @@ abstract public class NwkServer : NwkSystemBase
   }
 
   public override bool isConnected() => sendWrapper != null;
+
+  public void serverDisconnect()
+  {
+    disconnect();
+  }
 
 }

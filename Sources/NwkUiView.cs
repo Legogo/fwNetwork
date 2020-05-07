@@ -140,6 +140,11 @@ public class NwkUiView : MonoBehaviour
 
   public void onConnectButtonPressed()
   {
+    if(NwkSystemBase.isServer())
+    {
+      NwkServer.nwkServer.disconnect();
+    }
+
     if (!NwkClient.isClient())
     {
       Debug.LogWarning("not on client ? can't react to that button");

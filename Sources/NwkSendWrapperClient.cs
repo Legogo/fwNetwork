@@ -17,7 +17,7 @@ public class NwkSendWrapperClient : NwkSendWrapper
     this.unetClient = unetClient;
   }
 
-  public void sendClientToServer(iNwkMessageId message)
+  public void sendClientToServer(iNwkMessage message, bool reliable = true)
   {
     Debug.Assert(message != null, "no message given ?");
 
@@ -25,11 +25,26 @@ public class NwkSendWrapperClient : NwkSendWrapper
     //NwkMessageFull mFull = message as NwkMessageFull;
     //if (mFull != null) silent = mFull.isSilent();
 
-    NwkSystemBase.nwkSys.log("<b>sending "+message.GetType()+"</b> | " + message.getIdCard().toString(), message.isSilent());
+    string sId = "";
+    iNwkMessageId id = message as iNwkMessageId;
+    if(id != null)
+    {
+      sId = id.getIdCard().getMessageSender()+"<>"+id.getIdCard().getMessageType();
+    }
+
+    //NwkSystemBase.nwkSys.log("<b>sending "+message.GetType()+"</b> "+ sId, message.isSilent());
     
     Debug.Assert((message as MessageBase) != null, "can't cast message to unet type ?");
-
-    unetClient.Send(message.getMessageId(), message as MessageBase);
+    if (!reliable)
+    {
+      //0 is reliable, 1 unreliable
+      unetClient.SendByChannel(message.getMessageUnetId(), message as MessageBase, 1);
+    }
+    else
+    {
+      unetClient.Send(message.getMessageUnetId(), message as MessageBase);
+    }
+    
   }
 
 }

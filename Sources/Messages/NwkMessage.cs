@@ -22,7 +22,7 @@ public enum eNwkMessageType
 
 public interface iNwkMessage
 {
-  short getMessageId();
+  short getMessageUnetId();
   bool isSilent();
 }
 

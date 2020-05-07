@@ -6,10 +6,11 @@ using UnityEngine.Networking;
 /// <summary>
 /// inherit but do not use as is
 /// </summary>
+[System.Obsolete("old deprecated logic, don't use custom, create your own")]
 public class NwkMessageCustom : MessageBase, iNwkMessageId
 {
   public const short MSG_ID_CUSTOM = MsgType.Highest + 3;
-  public short getMessageId() => MSG_ID_CUSTOM;
+  public short getMessageUnetId() => MSG_ID_CUSTOM;
 
   public NwkMessageModIdCard id;
 

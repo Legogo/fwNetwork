@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 public class NwkMessageComplexe : MessageBase, iNwkMessageId
 {
   public const short MSG_ID_COMPLEXE = MsgType.Highest + 2;
-  public short getMessageId() => MSG_ID_COMPLEXE;
+  public short getMessageUnetId() => MSG_ID_COMPLEXE;
 
   public bool isSilent() => true;
 

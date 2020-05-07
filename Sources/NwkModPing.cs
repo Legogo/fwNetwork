@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using UnityEditor;
 using UnityEngine;
 
 /// <summary>
@@ -9,7 +11,7 @@ using UnityEngine;
 public class NwkModPing : NwkModuleClient
 {
   float pingTimer = 0f;
-  float pingItv = 1f;
+  public float pingItv = 1f; // won't work if go through 0
 
   NwkMessageBasic pingMessage;
 
@@ -18,6 +20,8 @@ public class NwkModPing : NwkModuleClient
   float _pingTime = 0f;
   float _pongTime = 0f;
   float _lastDelta = 0f;
+
+  List<float> _lastDeltas = new List<float>();
 
   protected override void setup()
   {
@@ -33,6 +37,11 @@ public class NwkModPing : NwkModuleClient
       Debug.LogWarning("ping NOT active");
     }
 
+  }
+
+  private void OnValidate()
+  {
+    pingTimer = pingItv;
   }
 
   protected override void updateNwk()
@@ -58,34 +67,50 @@ public class NwkModPing : NwkModuleClient
     _pingTime = Time.realtimeSinceStartup;
 
     pingMessage.getIdCard().setMessageSender(NwkClient.nwkUid);
-    _client.sendWrapperClient.sendClientToServer(pingMessage);
+    _client.sendWrapperClient.sendClientToServer(pingMessage, false);
+
+    //Debug.Log("ping ! " + _pingTime);
   }
 
+  /// <summary>
+  /// called on pong reception
+  /// </summary>
   public int pong()
   {
     _pongTime = Time.realtimeSinceStartup;
-    if (_pingTime <= 0f) _pingTime = _pongTime;
+    if (_pingTime <= 0f) _pingTime = _pongTime; // first time
 
     _lastDelta = _pongTime - _pingTime;
+    _lastDeltas.Add(_lastDelta);
+    if(_lastDeltas.Count > 10) _lastDeltas.RemoveAt(0);
+
+    //Debug.Log(_pingTime+" -> "+ _pongTime + " => " + _lastDelta);
 
     int ms = getMilliSec(_lastDelta);
-    //_client.log("pong = " + ms);
-
-    //owner.getClientData(NwkClient.nwkUid)
-
     return ms;
-    //if(onPong != null) onPong(dlt);
   }
 
   /// <summary>
   /// in secondes
   /// </summary>
   public float getRawPing() => _lastDelta;
-  
+
   /// <summary>
   /// in millisec
   /// </summary>
-  public int getCurrentPing() => getMilliSec(_lastDelta);
+  public float getCurrentPing(bool ms = true)
+  {
+    float avg = 0f;
+    for (int i = 0; i < _lastDeltas.Count; i++)
+    {
+      avg += _lastDeltas[i];
+    }
+    avg /= _lastDeltas.Count;
+
+    if (!ms) return avg;
+
+    return getMilliSec(avg);
+  }
 
   static public int getMilliSec(float dlt)
   {

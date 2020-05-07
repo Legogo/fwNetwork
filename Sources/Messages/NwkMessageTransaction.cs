@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 public class NwkMessageTransaction : MessageBase, iNwkMessageId
 {
   public const short MSG_ID_TRANSACTION = MsgType.Highest + 4;
-  public short getMessageId() => MSG_ID_TRANSACTION;
+  public short getMessageUnetId() => MSG_ID_TRANSACTION;
 
   public NwkMessageModIdCard id;
   public NwkMessageModIdCard getIdCard()

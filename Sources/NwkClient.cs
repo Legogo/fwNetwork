@@ -276,7 +276,7 @@ abstract public class NwkClient : NwkSystemBase
 
         //Debug.Log(Time.frameCount+" received tick data");
 
-        float pingToMs = NwkClient.nwkClient.getModule<NwkModPing>().getRawPing();
+        float pingToMs = NwkClient.nwkClient.getModule<NwkModPing>().getCurrentPing(true); // return ms
 
         TickData td = (TickData)message.bytes.getObjectFromByteData();
         getModule<NwkTick>().setupTick(td.tickRate, td.tick, td.tickRateTimer, pingToMs);
@@ -301,6 +301,8 @@ abstract public class NwkClient : NwkSystemBase
   override protected void solveBasic(NwkMessageBasic message, int connID)
   {
     eNwkMessageType mtype = (eNwkMessageType)message.getIdCard().getMessageType();
+
+    //log("basic ? " + message.getIdCard().toString());
 
     switch (mtype)
     {

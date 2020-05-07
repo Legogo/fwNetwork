@@ -18,7 +18,7 @@ public class NwkSendWrapperServer : NwkSendWrapper
   /// </summary>
   public void sendToSpecificClient(iNwkMessageId message, int clientConnectionId)
   {
-    NetworkServer.SendToClient(clientConnectionId, message.getMessageId(), message as MessageBase);
+    NetworkServer.SendToClient(clientConnectionId, message.getMessageUnetId(), message as MessageBase);
   }
 
   /// <summary>
@@ -34,13 +34,13 @@ public class NwkSendWrapperServer : NwkSendWrapper
 
     message.generateToken();
 
-    Debug.Assert(message.getMessageId() != NwkMessageTransaction.MSG_ID_TRANSACTION, "trying to send transaction message with a message that is not a transaction message");
+    Debug.Assert(message.getMessageUnetId() != NwkMessageTransaction.MSG_ID_TRANSACTION, "trying to send transaction message with a message that is not a transaction message");
     Debug.Assert(message.getIdCard().getMessageType() >= 0, "message type is not setup ?");
     Debug.Assert(message.token >= 0, "token is not setup");
 
-    NwkSystemBase.nwkSys.log("sending transaction ("+ message.getMessageId()+") token ? " + message.token+" type ? "+ message.getIdCard().getMessageType());
+    NwkSystemBase.nwkSys.log("sending transaction ("+ message.getMessageUnetId()+") token ? " + message.token+" type ? "+ message.getIdCard().getMessageType());
 
-    NetworkServer.SendToClient(clientConnectionId, message.getMessageId(), message);
+    NetworkServer.SendToClient(clientConnectionId, message.getMessageUnetId(), message);
     NwkMessageListener.getListener().add(message, onTransactionCompleted);
   }
 
@@ -54,7 +54,7 @@ public class NwkSendWrapperServer : NwkSendWrapper
   public void broadcastServerToAll(iNwkMessageId message, int senderUid = 0)
   {
     message.getIdCard().setMessageSender(senderUid);
-    NetworkServer.SendToAll(message.getMessageId(), message as MessageBase);
+    NetworkServer.SendToAll(message.getMessageUnetId(), message as MessageBase);
   }
 
 }
