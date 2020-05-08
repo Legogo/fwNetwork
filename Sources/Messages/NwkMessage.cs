@@ -22,23 +22,20 @@ public enum eNwkMessageType
 
 public interface iNwkMessage
 {
-  short getMessageUnetId();
-  bool isSilent();
+  short getMessageUnetId(); // uniq MSG ID
+  bool isSilent(); // log visible in ui
 }
 
 public interface iNwkMessageId : iNwkMessage
 {
-  NwkMessageModIdCard getIdCard();
+  NwkMessageModIdCard getIdCard(); // capacity to have a type
 }
 
 [System.Serializable]
 public class NwkMessageModIdCard
 {
-
   public int type;
   public int sender; // nwk uid
-
-
 
   public void setupId(int nwkUid, int type)
   {

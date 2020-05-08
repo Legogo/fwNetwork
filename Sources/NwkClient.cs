@@ -24,7 +24,7 @@ abstract public class NwkClient : NwkSystemBase
   static public int nwkConnId = -1;
 
   public NwkSendWrapperClient sendWrapperClient;
-  NetworkClient unetClient;
+  protected NetworkClient unetClient;
 
   protected override void Awake()
   {
@@ -244,8 +244,7 @@ abstract public class NwkClient : NwkSystemBase
 
         if (broadcastedUid == nwkUid)
         {
-          log("just received confirmation from server form local client connection");
-          log(nwkUid+" VS " + broadcastedUid);
+          log("just received confirmation from server form local client connection | "+nwkUid+" VS " + broadcastedUid);
 
           //server asked, we sent the answer ... connection ready ?
           onNetworkLinkReady();

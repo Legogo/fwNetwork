@@ -115,10 +115,8 @@ abstract public class NwkServer : NwkSystemBase
   {
     base.registerHandlers();
 
-    // Unity have different Messages types defined in MsgType
-    NetworkServer.RegisterHandler(MsgType.Connect, OnClientConnected);
-    NetworkServer.RegisterHandler(MsgType.Disconnect, OnClientDisconnected);
-
+    registerHandle(MsgType.Connect, OnClientConnected);
+    registerHandle(MsgType.Disconnect, OnClientDisconnected);
   }
 
   void OnClientConnected(NetworkMessage clientConnectionMessage)

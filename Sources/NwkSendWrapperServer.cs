@@ -27,14 +27,10 @@ public class NwkSendWrapperServer : NwkSendWrapper
   /// </summary>
   public void sendTransaction(NwkMessageTransaction message, int clientConnectionId, Action<NwkMessageTransaction> onTransactionCompleted = null)
   {
-    message.getIdCard().setMessageSender(0);
+    message.getIdCard().setMessageSender(0); // server is sender
+    message.generateToken(); // won't change token if already setup, a token for when the answer arrives
 
-    // won't change token if already setup
-    // a token for when the answer arrives
-
-    message.generateToken();
-
-    Debug.Assert(message.getMessageUnetId() != NwkMessageTransaction.MSG_ID_TRANSACTION, "trying to send transaction message with a message that is not a transaction message");
+    Debug.Assert(message.getMessageUnetId() == NwkMessageTransaction.MSG_ID_TRANSACTION, "trying to send transaction message with a message that is not a transaction message ; "+message.getMessageUnetId()+" vs "+NwkMessageTransaction.MSG_ID_TRANSACTION);
     Debug.Assert(message.getIdCard().getMessageType() >= 0, "message type is not setup ?");
     Debug.Assert(message.token >= 0, "token is not setup");
 

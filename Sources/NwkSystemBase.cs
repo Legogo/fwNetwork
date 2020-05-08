@@ -196,6 +196,11 @@ abstract public class NwkSystemBase : MonoBehaviour
     return clientDatas.Count;
   }
 
+  public void logError(string ct)
+  {
+    log("<color=red>" + ct + "</color>");
+  }
+
   public void log(string ct, bool silent = false)
   {
     if (NwkClient.isClient()) ct = NwkClient.nwkUid + " " + ct;
