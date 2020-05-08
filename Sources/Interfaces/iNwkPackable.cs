@@ -2,9 +2,38 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface INwkSyncable
+/// <summary>
+/// suitable for syncer
+/// </summary>
+public interface iNwkSync : iNwkPack
 {
-  //bytes stuff
+
+  /// <summary>
+  /// store and create on each object
+  /// </summary>
+  NwkSyncableData getData();
+
+}
+
+/// <summary>
+/// lier un packable a un objet
+/// </summary>
+public interface iNwkPack : iNwkPackable
+{
+
+  int getSyncIID();
+
+}
+
+/// <summary>
+/// pack, unpack
+/// </summary>
+public interface iNwkPackable
+{
+  /// <summary>
+  /// don't forget to spacify an IID (instance id) during packing 
+  /// to be able to transfert the package to the right object
+  /// </summary>
   object pack(); // generate an object with all data to sync
 
   /// <summary>
@@ -13,20 +42,15 @@ public interface INwkSyncable
   /// </summary>
   void unpack(object obj);
 
-  /// <summary>
-  /// store and create on each object
-  /// </summary>
-  NwkSyncableData getData();
-
   //string getPrefabUID();
 }
 
-static public class INwkExtensions
+static public class iNwkExtensions
 {
   /// <summary>
   /// explains how to sub to syncer
   /// </summary>
-  static public NwkSyncableData subSync(this INwkSyncable instance)
+  static public NwkSyncableData subSync(this iNwkSync instance)
   {
     return GameObject.FindObjectOfType<NwkSyncer>().sub(instance);
   }
@@ -36,7 +60,7 @@ static public class INwkExtensions
   /// meant to pass specific balancing data on object generation
   /// DO NOT MANAGE idcard
   /// </summary>
-  static public NwkSyncableData createData(this INwkSyncable instance, float syncTime, short PID = -1)
+  static public NwkSyncableData createData(this iNwkPack instance, float syncTime, short PID = -1)
   {
     NwkSyncableData data = new NwkSyncableData(instance, syncTime);
     data.idCard.syncPID = PID;

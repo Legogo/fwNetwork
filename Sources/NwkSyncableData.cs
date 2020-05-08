@@ -6,25 +6,28 @@ using UnityEngine;
 /// everybody can create a new sync object
 /// server will register and send to everybody else
 /// everybody must be able to recreate that object in local sim
+/// 
+/// sert a stocker les temps de frequence d'envoi
 /// </summary>
 
 public class NwkSyncableData
 {
-  public NwkSyncableId idCard;
+  public int syncNwkClientUID; // nwkClient, owner ID
+  public NwkSyncableId idCard; // all data needed to find the right object to unpack
   
-  public INwkSyncable handle;
+  public iNwkPack handle; // handle to actual object that will pack/unpack
 
   //for syncer to work with
   float _sendTimer; // local timer
   float _sendFrequency; // time interval to send pack to server
 
-  public NwkSyncableData(INwkSyncable parent, float freq)
+  public NwkSyncableData(iNwkPack parent, float freq)
   {
     idCard = new NwkSyncableId();
     idCard.syncIID = NwkClient.generateUniqId();
     
     //this is overritten in syncer first message when it's not local
-    idCard.syncNwkClientUID = NwkClient.nwkUid;
+    syncNwkClientUID = NwkClient.nwkUid;
 
     handle = parent;
     _sendFrequency = freq;
@@ -37,8 +40,6 @@ public class NwkSyncableData
   {
     _sendTimer = 0f;
   }
-
-  //public float 
 
   public bool updateFreqTimer(float dt)
   {
@@ -64,7 +65,7 @@ public class NwkSyncableData
 
   public NwkSyncableData overrideData(int nwkClientUID, int IID, int PID)
   {
-    idCard.syncNwkClientUID = nwkClientUID;
+    syncNwkClientUID = nwkClientUID;
     idCard.syncIID = IID;
     idCard.syncPID = PID;
     return this;
@@ -74,7 +75,6 @@ public class NwkSyncableData
 [System.Serializable]
 public struct NwkSyncableId
 {
-  public int syncNwkClientUID; // client owner ID
-  public int syncIID; // uniq instance ID
-  public int syncPID; // name of prefab
+  public int syncIID; // uniq instance ID, uniq id to be able to find the right object
+  public int syncPID; // name of prefab (from the database)
 }

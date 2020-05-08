@@ -7,9 +7,9 @@ public class NwkTick : NwkModule
 {
   public TickData data;
 
-  protected override void setup()
+  protected override void setupModule()
   {
-    base.setup();
+    base.setupModule();
 
     data.tickRateTimer = -1f;
     data.tickRate = 0.25f;

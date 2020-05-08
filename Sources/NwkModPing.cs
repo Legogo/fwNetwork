@@ -23,9 +23,9 @@ public class NwkModPing : NwkModuleClient
 
   List<float> _lastDeltas = new List<float>();
 
-  protected override void setup()
+  protected override void setupModule()
   {
-    base.setup();
+    base.setupModule();
 
     pingMessage = new NwkMessageBasic();
     pingMessage.getIdCard().setMessageType(eNwkMessageType.PING);

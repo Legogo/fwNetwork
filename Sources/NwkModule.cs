@@ -22,10 +22,10 @@ abstract public class NwkModule : NwkMono
     owner = GameObject.FindObjectOfType<NwkSystemBase>();
     Debug.Assert(owner != null, "no nwk system ?");
 
-    setup();
+    setupModule();
   }
 
-  virtual protected void setup()
+  virtual protected void setupModule()
   {
 
     Debug.Log("creating " + GetType() + " module");

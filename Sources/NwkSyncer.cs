@@ -128,7 +128,7 @@ public class NwkSyncer : NwkMono
     stack.Clear();
   }
 
-  public bool hasBroad(INwkSyncable sync)
+  public bool hasBroad(iNwkSync sync)
   {
     for (int i = 0; i < broadcasters.Count; i++)
     {
@@ -140,7 +140,7 @@ public class NwkSyncer : NwkMono
     return false;
   }
 
-  public NwkSyncableData sub(INwkSyncable sync)
+  public NwkSyncableData sub(iNwkSync sync)
   {
     if(hasBroad(sync))
     {
@@ -156,7 +156,7 @@ public class NwkSyncer : NwkMono
       broadcasters.Add(data);
       
       //on sub l'objet que si c'est un objet local
-      if(data.idCard.syncNwkClientUID == NwkClient.nwkUid)
+      if(data.syncNwkClientUID == NwkClient.nwkUid)
       {
         frequencers.Add(data);
       }
@@ -168,7 +168,7 @@ public class NwkSyncer : NwkMono
     return data;
   }
 
-  public void unsub(INwkSyncable sync)
+  public void unsub(iNwkSync sync)
   {
 
     if (!hasBroad(sync))
@@ -241,7 +241,7 @@ public class NwkSyncer : NwkMono
 
     //find ref of component of that sync in newly created object
     NwkSyncableData curSyncData = null;
-    INwkSyncable sync = filterSyncableOnInstance(copy, factoryDb.items[oPID].type);
+    iNwkSync sync = filterSyncableOnInstance(copy, factoryDb.items[oPID].type);
 
     if (sync == null)
     {
@@ -266,15 +266,15 @@ public class NwkSyncer : NwkMono
   /// <summary>
   /// en l'état il faut que le couple Compo,Inwk soit unique dans toute la hierarchie
   /// </summary>
-  INwkSyncable filterSyncableOnInstance(GameObject copy, string factoType)
+  iNwkSync filterSyncableOnInstance(GameObject copy, string factoType)
   {
     //https://stackoverflow.com/questions/11107536/convert-string-to-type-in-c-sharp
     Type _type = Type.GetType(factoType);
 
     //gather all syncable in newly created object
-    List<INwkSyncable> all = new List<INwkSyncable>();
-    all.AddRange(copy.GetComponentsInChildren<INwkSyncable>());
-    all.AddRange(copy.GetComponentsInParent<INwkSyncable>());
+    List<iNwkSync> all = new List<iNwkSync>();
+    all.AddRange(copy.GetComponentsInChildren<iNwkSync>());
+    all.AddRange(copy.GetComponentsInParent<iNwkSync>());
 
     for (int i = 0; i < all.Count; i++)
     {
@@ -282,7 +282,7 @@ public class NwkSyncer : NwkMono
 
       if(compareType(all[i].GetType(), _type))
       {
-        INwkSyncable tmp = all[i] as INwkSyncable;
+        iNwkSync tmp = all[i] as iNwkSync;
         if (tmp != null) return tmp;
       }
     }
@@ -290,7 +290,7 @@ public class NwkSyncer : NwkMono
     return null;
   }
 
-  void bubbleSyncableToListeners(GameObject copy, INwkSyncable sync)
+  void bubbleSyncableToListeners(GameObject copy, iNwkSync sync)
   {
     List<INwkSyncListener> all = new List<INwkSyncListener>();
     all.AddRange(copy.GetComponentsInChildren<INwkSyncListener>());

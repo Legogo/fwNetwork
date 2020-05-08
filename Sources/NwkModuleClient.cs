@@ -10,9 +10,9 @@ abstract public class NwkModuleClient : NwkModule
 {
   protected NwkClient _client;
 
-  protected override void setup()
+  protected override void setupModule()
   {
-    base.setup();
+    base.setupModule();
 
     _client = owner as NwkClient;
 

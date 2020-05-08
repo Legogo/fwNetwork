@@ -32,7 +32,7 @@ abstract public class NwkClient : NwkSystemBase
 
     nwkClient = this;
 
-    nwkUid = generateUniqNetworkId(); // client is generating its UID
+    nwkUid = generateUniqNetworkClientId(); // client is generating its UID
 
     uiView?.setConnected(false);
   }
@@ -372,8 +372,9 @@ abstract public class NwkClient : NwkSystemBase
 
   /// <summary>
   /// uid is stored in ppref for next launch
+  /// this uid is meant for CLIENTS
   /// </summary>
-  static public short generateUniqNetworkId()
+  static public short generateUniqNetworkClientId()
   {
     short id = (short)PlayerPrefs.GetInt("nwkid", -1);
 
@@ -389,6 +390,9 @@ abstract public class NwkClient : NwkSystemBase
     return id;
   }
 
+  /// <summary>
+  /// generic uid generator
+  /// </summary>
   static public short generateUniqId()
   {
     return (short)Random.Range(0, 9999);

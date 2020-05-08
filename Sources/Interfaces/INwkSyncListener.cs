@@ -13,6 +13,6 @@ public interface INwkSyncListener
   /// when I'm created by a sync event
   /// tout les iNwk enfant vont bubble l'info
   /// </summary>
-  void evtINwkScopeChange(INwkSyncable sync, bool isLocal);
+  void evtINwkScopeChange(iNwkPack sync, bool isLocal);
 
 }

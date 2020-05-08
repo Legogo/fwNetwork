@@ -7,19 +7,21 @@ using System.Linq;
 /// module meant to sync plugged controller info
 /// </summary>
 
-public class NwkModControllers : NwkModule, INwkSyncable
+public class NwkModControllers : NwkModule, iNwkSync
 {
   bool useUniqIds = false;
 
   //list keep uids of old controllers but track connected state
   List<NwkModClientControllers> _clientsControllers = new List<NwkModClientControllers>();
 
-  protected override void setup()
+  protected override void setupModule()
   {
-    base.setup();
+    base.setupModule();
 
     this.subSync();
   }
+
+  public int getSyncIID() => getData().idCard.syncIID;
 
   NwkModClientControllers getClientControllers(short nwkUid)
   {
@@ -179,6 +181,7 @@ public class NwkModControllers : NwkModule, INwkSyncable
   {
     return true;
   }
+
 }
 
 [System.Serializable]
