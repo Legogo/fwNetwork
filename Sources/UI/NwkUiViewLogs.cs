@@ -3,12 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class NwkUiView : MonoBehaviour
+public class NwkUiViewLogs : NwkUiView
 {
-  Canvas _canvas;
-
-  public CanvasGroup groupData;
-
   public Text txtLabel;
   public Text txtClients;
   public Button btnConnect;
@@ -20,43 +16,29 @@ public class NwkUiView : MonoBehaviour
   public Text txtRaw;
   public Text txtLogs;
 
-  NwkUiViewLogs raws;
-  NwkUiViewLogs logs;
+  NwkUiLogs raws;
+  NwkUiLogs logs;
 
-  private void Awake()
+  protected override void build()
   {
+    base.build();
     txtLabel.text = "~Type~";
     txtClients.text = "";
 
-    raws = new NwkUiViewLogs(txtRaw);
-    logs = new NwkUiViewLogs(txtLogs);
+    raws = new NwkUiLogs(txtRaw);
+    logs = new NwkUiLogs(txtLogs);
 
     btnConnect.gameObject.SetActive(false);
-
-    _canvas = GetComponent<Canvas>();
-    hide();
   }
 
-  private void Start()
+  protected override void setup()
   {
+    base.setup();
+
     setConnected(false);
   }
 
-  public void show()
-  {
-    _canvas.enabled = true;
-  }
-
-  public void hide()
-  {
-    _canvas.enabled = false;
-  }
-
-  public void setupBoot(string label, bool connected)
-  {
-    setLabel(label);
-    setConnected(true);
-  }
+  public override string getTabLabel() => "logs";
 
   public void setLabel(string newLabel)
   {
@@ -72,6 +54,7 @@ public class NwkUiView : MonoBehaviour
 
   void Update()
   {
+    //can update if nwksys is present
     bool allowUpdate = canUpdate();
 
     //kill visual if can't update
@@ -84,14 +67,14 @@ public class NwkUiView : MonoBehaviour
 
     List<NwkClientData> datas = NwkSystemBase.nwkSys.clientDatas;
 
-    string ct = "clients x"+ datas.Count;
+    string ct = "clients x" + datas.Count;
 
     for (int i = 0; i < datas.Count; i++)
     {
       //datas[i].update(); // update size timer
 
       //STATE
-      ct += "\n #" + datas[i].nwkUid+"\t("+ datas[i].state+")";
+      ct += "\n #" + datas[i].nwkUid + "\t(" + datas[i].state + ")";
 
       if (datas[i].isDisconnected()) continue;
 
@@ -102,7 +85,7 @@ public class NwkUiView : MonoBehaviour
 
       //SIZE
 
-      if(_server) ct += "\n size " + datas[i].sizeSeconds;
+      if (_server) ct += "\n size " + datas[i].sizeSeconds;
     }
 
     txtClients.text = ct;
@@ -125,11 +108,11 @@ public class NwkUiView : MonoBehaviour
   public void setConnected(bool connected)
   {
     stConnection.color = connected ? Color.green : Color.red;
-    
+
     if (!btnConnect.gameObject.activeSelf) btnConnect.gameObject.SetActive(true);
 
     Text label = btnConnect.GetComponentInChildren<Text>();
-    if(label != null)
+    if (label != null)
     {
       if (NwkSystemBase.isServer()) label.text = connected ? "Shutdown" : "Boot";
       else label.text = connected ? "Disconnect" : "Connect";
@@ -140,7 +123,7 @@ public class NwkUiView : MonoBehaviour
 
   public void onConnectButtonPressed()
   {
-    if(NwkSystemBase.isServer())
+    if (NwkSystemBase.isServer())
     {
       NwkServer.nwkServer.disconnect();
     }
@@ -152,7 +135,7 @@ public class NwkUiView : MonoBehaviour
     }
 
     bool clientConnection = NwkClient.nwkClient.isConnected();
-    NwkClient.nwkClient.log("clicked : "+btnConnect.GetComponentInChildren<Text>().text+" / is connected ? "+clientConnection);
+    NwkClient.nwkClient.log("clicked : " + btnConnect.GetComponentInChildren<Text>().text + " / is connected ? " + clientConnection);
 
     if (clientConnection)
     {
@@ -162,6 +145,12 @@ public class NwkUiView : MonoBehaviour
     {
       NwkClient.nwkClient.connectToIpPort(); // ui view button connect
     }
+  }
+
+  public void setupBoot(string label, bool connected)
+  {
+    setLabel(label);
+    setConnected(true);
   }
 
 }

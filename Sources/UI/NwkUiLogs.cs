@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Text;
 
-public class NwkUiViewLogs
+public class NwkUiLogs
 {
   Text txtField;
   List<string> logs = new List<string>();
@@ -12,7 +12,7 @@ public class NwkUiViewLogs
 
   int countMax = 50;
 
-  public NwkUiViewLogs(Text field, string defaultContent = "")
+  public NwkUiLogs(Text field, string defaultContent = "")
   {
     sbuilder = new StringBuilder();
 

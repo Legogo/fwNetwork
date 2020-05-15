@@ -14,8 +14,9 @@ abstract public class NwkSystemBase : MonoBehaviour
 
   protected NwkMessageListener listener;
 
-  public bool useUiView = false;
-  protected NwkUiView uiView;
+  public bool uiLogs = false;
+  protected NwkUiViewLogs nvLogs = null;
+
   //protected NwkSendWrapper sendWrapper; // wrapper must be generated only when connection is active
 
   public List<NwkClientData> clientDatas = new List<NwkClientData>();
@@ -50,21 +51,13 @@ abstract public class NwkSystemBase : MonoBehaviour
 
     //Debug.Log("waiting for nwk ui view ...");
 
-    if (useUiView)
+    if (uiLogs)
     {
-      Debug.Log("loading debug ui view");
-
-      AsyncOperation async = NwkUnityTools.loadScene("network-view");
-
-      if (async != null)
+      NwkUiTabs.loadView("logs", delegate (bool success)
       {
-        while (!async.isDone) yield return null;
-      }
-
-      uiView = GameObject.FindObjectOfType<NwkUiView>();
-      uiView.setLabel(GetType().ToString());
-
-      //Debug.Log(uiView);
+        nvLogs = GameObject.FindObjectOfType<NwkUiViewLogs>();
+        nvLogs?.setLabel(GetType().ToString());
+      });
     }
 
     setup();
@@ -145,22 +138,22 @@ abstract public class NwkSystemBase : MonoBehaviour
   {
     Debug.Log("<b>"+GetType() + " connected !</b>");
 
-    uiView?.setConnected(true);
+    nvLogs?.setConnected(true);
 
     tick.resetTickCount();
   }
 
   virtual protected void onStateDisconnected()
   {
-    if (uiView != null) uiView.setConnected(false);
+    if (nvLogs != null) nvLogs.setConnected(false);
   }
 
   virtual protected void updateNetwork()
   {
 
-    if(uiView != null && tick != null)
+    if(nvLogs != null && tick != null)
     {
-      uiView.txtTick.text = tick.getTickCount().ToString();
+      nvLogs.txtTick.text = tick.getTickCount().ToString();
     }
     
   }
@@ -206,14 +199,13 @@ abstract public class NwkSystemBase : MonoBehaviour
     if (NwkClient.isClient()) ct = NwkClient.nwkUid + " " + ct;
 
     Debug.Log(ct);
-
-    if (uiView == null)
+    
+    if(nvLogs != null)
     {
-      return;
+      if (!silent) nvLogs.addLog(ct);
+      else nvLogs.addRaw(ct);
     }
-
-    if(!silent) uiView.addLog(ct);
-    else uiView.addRaw(ct);
+    
   }
 
   public T getModule<T>() where T : NwkModule
