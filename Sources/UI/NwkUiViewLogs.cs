@@ -35,6 +35,9 @@ public class NwkUiViewLogs : NwkUiView
   {
     base.setup();
 
+    //not visible by default
+    hide();
+
     setConnected(false);
   }
 
@@ -118,7 +121,7 @@ public class NwkUiViewLogs : NwkUiView
       else label.text = connected ? "Disconnect" : "Connect";
     }
 
-    show();
+    //show();
   }
 
   public void onConnectButtonPressed()

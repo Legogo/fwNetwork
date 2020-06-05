@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 
 /// <summary>
+/// abstract generic base class
 /// to be able to query for server list
 /// </summary>
 

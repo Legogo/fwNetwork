@@ -133,7 +133,7 @@ GameObject:
   - component: {fileID: 479844173}
   - component: {fileID: 479844172}
   m_Layer: 5
-  m_Name: Text
+  m_Name: label
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -385,6 +385,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tabsPivot: {fileID: 1686321132}
+  refTabButton: {fileID: 1446307697}
 --- !u!1 &1446307697
 GameObject:
   m_ObjectHideFlags: 0
@@ -398,7 +399,7 @@ GameObject:
   - component: {fileID: 1446307700}
   - component: {fileID: 1446307699}
   m_Layer: 5
-  m_Name: home
+  m_Name: refButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -6,92 +6,130 @@ using UnityEngine.SceneManagement;
 
 public class NwkUiTabs : MonoBehaviour
 {
-  public Transform tabsPivot;
-  GameObject refTabButton;
+  //public Transform tabsPivot;
+  public GameObject refTabButton;
+
+  List<NwkUiTab> tabs = new List<NwkUiTab>();
   
   private void Start()
   {
-    refTabButton = tabsPivot.transform.GetChild(0).gameObject;
+    Transform pivot = refTabButton.transform.parent;
+    Debug.Assert(pivot != null);
+
+    refTabButton = pivot.transform.GetChild(0).gameObject; // le bouton générique
     Debug.Assert(refTabButton);
 
-    //viewsPivot = refTabButton.transform.parent;
+    refTabButton.gameObject.SetActive(false);
 
-    refreshTabs();
+    refreshTabs(); // start de tabs
   }
-  
-  void clearView()
+
+  iNwkUiTab[] fetchTabs()
   {
-    if(tabsPivot != null)
-    {
-      while (tabsPivot.childCount > 1)
-      {
-        GameObject.DestroyImmediate(tabsPivot.GetChild(0).gameObject);
-      }
-    }
+    List<iNwkUiTab> tmp = new List<iNwkUiTab>();
     
-    if(refTabButton != null)
+    //should be Component ?
+    NwkUiView[] views = GameObject.FindObjectsOfType<NwkUiView>();
+    for (int i = 0; i < views.Length; i++)
     {
-      refTabButton.SetActive(false);
+      iNwkUiTab tab = views[i] as iNwkUiTab;
+      if (tab != null) tmp.Add(tab);
     }
+
+    return tmp.ToArray();
   }
 
   public void refreshTabs()
   {
-    clearView();
+    iNwkUiTab[] _refTabs = fetchTabs();
 
-    NwkUiView[] views = GameObject.FindObjectsOfType<NwkUiView>();
+    //Debug.Log("found " + _refTabs.Length + " tabs");
 
-    Debug.Log("refreshing tabs " + views.Length);
-
-    for (int i = 0; i < views.Length; i++)
+    for (int i = 0; i < _refTabs.Length; i++)
     {
-      GameObject view = refTabButton;
+      NwkUiTab _tab = null;
 
-      if (i > 0)
+      if (tabs.Count > i) _tab = tabs[i];
+      if (_tab == null)
       {
-        view = GameObject.Instantiate(refTabButton);
-        view.transform.SetParent(tabsPivot);
+        _tab = new NwkUiTab();
+        tabs.Add(_tab);
       }
 
-      view.gameObject.SetActive(true);
+      _tab.tabRef = _refTabs[i];
 
-      Text label = view.GetComponentInChildren<Text>();
-      label.text = views[i].getTabLabel();
+      if(_tab.tabButton == null)
+      {
+        _tab.tabButton = GameObject.Instantiate(refTabButton).GetComponentInChildren<Button>();
+        _tab.tabButton.gameObject.SetActive(true); // ref is disabled
+
+        //Debug.Log("created " + _tab.tabButton, _tab.tabButton);
+      }
+
+      //part of the tab group
+      _tab.tabButton.transform.SetParent(refTabButton.transform.parent);
+
+      Text label = _tab.tabButton.GetComponentInChildren<Text>();
+      label.text = _tab.tabRef.getTabLabel();
+
     }
+
+    //Debug.Log(tabs.Count + " > " + _refTabs.Length);
+
+    while(tabs.Count > _refTabs.Length)
+    {
+      tabs[tabs.Count - 1].destroy();
+      tabs.RemoveAt(tabs.Count - 1);
+    }
+
   }
 
-  public void tabButtonPress(Button refButton)
+  public void tabButtonPress(Button clickedButton)
   {
-    Button[] buttons = tabsPivot.GetComponentsInChildren<Button>();
-    for (int i = 0; i < buttons.Length; i++)
-    {
-      NwkUiView view = getViewByTabName(buttons[i].GetComponentInChildren<Text>().text);
+    //Debug.Log(clickedButton.name);
 
-      if (buttons[i] == refButton)
+    for (int i = 0; i < tabs.Count; i++)
+    {
+      NwkUiTab tab = getTabByName(tabs[i].tabButton.GetComponentInChildren<Text>().text);
+
+      //Debug.Log(tab.tabRef);
+
+      if (tabs[i].tabButton == clickedButton)
       {
-        view.toggleVisible();
+        tab.tabRef.toggleTab();
       }
       else
       {
-        view.hide();
+        tab.tabRef.hideTab();
       }
     }
   }
 
-  NwkUiView getViewByTabName(string tabName)
+  NwkUiTab getTabByName(string tabName)
   {
-    NwkUiView[] views = GameObject.FindObjectsOfType<NwkUiView>();
-    for (int i = 0; i < views.Length; i++)
+    if (tabs.Count <= 0) return null;
+    for (int i = 0; i < tabs.Count; i++)
     {
-      if (views[i].getTabLabel() == tabName) return views[i];
+      if (tabs[i].tabRef.getTabLabel() == tabName) return tabs[i];
     }
     return null;
   }
 
 
-  public static void loadView(string viewName, System.Action<bool> onComplete = null)
+  public static void loadView(string containsViewName, System.Action<bool> onComplete = null)
   {
-    NwkSystemBase.nwkSys.StartCoroutine(loadingView(viewName, onComplete));
+    NwkUiView[] views = GameObject.FindObjectsOfType<NwkUiView>();
+    for (int i = 0; i < views.Length; i++)
+    {
+      if (views[i].gameObject.scene.name.Contains(containsViewName))
+      {
+        Debug.LogWarning(containsViewName + " is already loaded ?");
+        if(onComplete != null) onComplete(true);
+        return;
+      }
+    }
+
+    NwkSystemBase.nwkSys.StartCoroutine(loadingView(containsViewName, onComplete));
   }
 
   protected static IEnumerator loadingView(string viewName, System.Action<bool> onComplete = null)
@@ -137,4 +175,18 @@ public class NwkUiTabs : MonoBehaviour
     return false;
   }
 
+}
+
+public class NwkUiTab
+{
+  public iNwkUiTab tabRef;
+  public Button tabButton;
+
+  public void destroy()
+  {
+    if (tabButton != null) GameObject.Destroy(tabButton.gameObject);
+    tabRef = null;
+
+    //Debug.Log("destroyed");
+  }
 }

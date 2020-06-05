@@ -1,6 +1,10 @@
 ﻿using UnityEngine;
 
-abstract public class NwkUiView : MonoBehaviour
+/// <summary>
+/// tabs compatible
+/// </summary>
+
+abstract public class NwkUiView : MonoBehaviour, iNwkUiTab
 {
   Canvas _canvas;
   public CanvasGroup groupData;
@@ -25,15 +29,18 @@ abstract public class NwkUiView : MonoBehaviour
   {
     NwkUiTabs tabs = GameObject.FindObjectOfType<NwkUiTabs>();
     NwkUiView[] views = GameObject.FindObjectsOfType<NwkUiView>();
-    if(views.Length>0 && tabs == null)
+
+    if(views.Length > 0 && tabs == null)
     {
       NwkUiTabs.loadView("tabs");
     }
     else
     {
-      tabs.refreshTabs();
+      Debug.Log(name + " refreshing tabs", transform);
+      tabs.refreshTabs(); // nwk ui view setup
     }
-    
+
+    //hide();
   }
 
   private void OnDestroy()
@@ -49,7 +56,7 @@ abstract public class NwkUiView : MonoBehaviour
     {
       //force refresh tabs
       NwkUiTabs views = GameObject.FindObjectOfType<NwkUiTabs>();
-      if (views != null) views.refreshTabs();
+      if (views != null) views.refreshTabs(); // destroy ui view
     }
 
   }
@@ -72,5 +79,10 @@ abstract public class NwkUiView : MonoBehaviour
     _canvas.enabled = false;
   }
 
+
   virtual public string getTabLabel() => GetType().ToString();
+
+  public void showTab() => show();
+  public void hideTab() => hide();
+  public void toggleTab() => toggleVisible();
 }
