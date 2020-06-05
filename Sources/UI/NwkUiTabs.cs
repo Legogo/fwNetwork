@@ -24,6 +24,16 @@ public class NwkUiTabs : MonoBehaviour
     refreshTabs(); // start de tabs
   }
 
+  public iNwkUiTab getTabByName(string nm)
+  {
+    for (int i = 0; i < tabs.Count; i++)
+    {
+      Component cmp = tabs[i].tabRef as Component;
+      if (cmp != null && cmp.name.Contains(nm)) return tabs[i].tabRef;
+    }
+    return null;
+  }
+
   iNwkUiTab[] fetchTabs()
   {
     List<iNwkUiTab> tmp = new List<iNwkUiTab>();
@@ -90,7 +100,7 @@ public class NwkUiTabs : MonoBehaviour
 
     for (int i = 0; i < tabs.Count; i++)
     {
-      NwkUiTab tab = getTabByName(tabs[i].tabButton.GetComponentInChildren<Text>().text);
+      NwkUiTab tab = getTabRefByName(tabs[i].tabButton.GetComponentInChildren<Text>().text);
 
       //Debug.Log(tab.tabRef);
 
@@ -105,7 +115,7 @@ public class NwkUiTabs : MonoBehaviour
     }
   }
 
-  NwkUiTab getTabByName(string tabName)
+  NwkUiTab getTabRefByName(string tabName)
   {
     if (tabs.Count <= 0) return null;
     for (int i = 0; i < tabs.Count; i++)
@@ -115,6 +125,49 @@ public class NwkUiTabs : MonoBehaviour
     return null;
   }
 
+  public T getTabByType<T>() where T : iNwkUiTab
+  {
+    for (int i = 0; i < tabs.Count; i++)
+    {
+      T cmp = (T)tabs[i].tabRef;
+      if (cmp != null) return cmp;
+    }
+    return default(T); // null
+  }
+
+  /// <summary>
+  /// pas opti, utilise findobjectoftype
+  /// </summary>
+  public static iNwkUiTab getTabByTypeGlobal<T>() where T : iNwkUiTab
+  {
+    NwkUiView[] views = GameObject.FindObjectsOfType<NwkUiView>();
+
+    for (int i = 0; i < views.Length; i++)
+    {
+      iNwkUiTab cmp = views[i] as iNwkUiTab;
+      T output = (T)cmp;
+      if (output != null) return output;
+    }
+    return default(T); // null
+  }
+
+  /// <summary>
+  /// pas opti, utilise findobjectoftype
+  /// </summary>
+  public static iNwkUiTab getTabByNameGlobal(string tabName)
+  {
+    NwkUiView[] views = GameObject.FindObjectsOfType<NwkUiView>();
+
+    for (int i = 0; i < views.Length; i++)
+    {
+      iNwkUiTab cmp = views[i] as iNwkUiTab;
+
+      //Debug.Log(cmp + " " + cmp.getTabLabel() + " vs " + tabName);
+
+      if (cmp.getTabLabel() == tabName) return cmp;
+    }
+    return null;
+  }
 
   public static void loadView(string containsViewName, System.Action<bool> onComplete = null)
   {

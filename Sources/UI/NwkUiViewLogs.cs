@@ -36,9 +36,10 @@ public class NwkUiViewLogs : NwkUiView
     base.setup();
 
     //not visible by default
-    hide();
-
-    setConnected(false);
+    //done in parent class
+    //hide();
+    
+    setConnected(NwkSystemBase.nwkSys.isConnected());
   }
 
   public override string getTabLabel() => "logs";

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 /// to be able to query for server list
 /// </summary>
 
-abstract public class NwkWebServerLink : MonoBehaviour
+abstract public class NwkIpFetcher : MonoBehaviour
 {
   abstract public string getServerQueryUrl();
 

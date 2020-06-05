@@ -13,10 +13,7 @@ abstract public class NwkSystemBase : MonoBehaviour
   public const short messageID = 1000;
 
   protected NwkMessageListener listener;
-
-  public bool uiLogs = false;
-  protected NwkUiViewLogs nvLogs = null;
-
+  
   //protected NwkSendWrapper sendWrapper; // wrapper must be generated only when connection is active
 
   public List<NwkClientData> clientDatas = new List<NwkClientData>();
@@ -24,6 +21,8 @@ abstract public class NwkSystemBase : MonoBehaviour
   bool _localConnectionStatus = false;
 
   protected NwkTick tick;
+
+  //protected NwkUiViewLogs nvLogs;
 
   virtual protected void Awake()
   {
@@ -50,15 +49,6 @@ abstract public class NwkSystemBase : MonoBehaviour
     while (specBootSetup.MoveNext()) yield return null;
 
     //Debug.Log("waiting for nwk ui view ...");
-
-    if (uiLogs)
-    {
-      NwkUiTabs.loadView("logs", delegate (bool success)
-      {
-        nvLogs = GameObject.FindObjectOfType<NwkUiViewLogs>();
-        nvLogs?.setLabel(GetType().ToString());
-      });
-    }
 
     setup();
   }
@@ -138,25 +128,27 @@ abstract public class NwkSystemBase : MonoBehaviour
   {
     Debug.Log("<b>"+GetType() + " connected !</b>");
 
-    nvLogs?.setConnected(true);
+    getModule<NwkModViews>()?.getTab<NwkUiViewLogs>()?.setConnected(true);
 
     tick.resetTickCount();
   }
 
   virtual protected void onStateDisconnected()
   {
-    if (nvLogs != null) nvLogs.setConnected(false);
+    getModule<NwkModViews>()?.getTab<NwkUiViewLogs>()?.setConnected(false);
   }
 
   virtual protected void updateNetwork()
   {
-
-    if(nvLogs != null && tick != null)
+    NwkUiViewLogs nvLogs = getModule<NwkModViews>()?.getTab<NwkUiViewLogs>();
+    if (nvLogs != null && tick != null)
     {
       nvLogs.txtTick.text = tick.getTickCount().ToString();
     }
     
   }
+
+  public NwkUiViewLogs getLogView() => getModule<NwkModViews>()?.getTab<NwkUiViewLogs>();
 
   protected NwkClientData addClient(int newUid, int newConnId = -1)
   {
@@ -199,8 +191,9 @@ abstract public class NwkSystemBase : MonoBehaviour
     if (NwkClient.isClient()) ct = NwkClient.nwkUid + " " + ct;
 
     Debug.Log(ct);
-    
-    if(nvLogs != null)
+
+    NwkUiViewLogs nvLogs = getModule<NwkModViews>()?.getTab<NwkUiViewLogs>();
+    if (nvLogs != null)
     {
       if (!silent) nvLogs.addLog(ct);
       else nvLogs.addRaw(ct);

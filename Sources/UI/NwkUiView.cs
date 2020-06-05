@@ -22,7 +22,7 @@ abstract public class NwkUiView : MonoBehaviour, iNwkUiTab
   virtual protected void build()
   {
     _canvas = GetComponent<Canvas>();
-    hide();
+    hide(); // instant hide
   }
 
   virtual protected void setup()
@@ -30,9 +30,15 @@ abstract public class NwkUiView : MonoBehaviour, iNwkUiTab
     NwkUiTabs tabs = GameObject.FindObjectOfType<NwkUiTabs>();
     NwkUiView[] views = GameObject.FindObjectsOfType<NwkUiView>();
 
-    if(views.Length > 0 && tabs == null)
+    if(views.Length > 0)
     {
-      NwkUiTabs.loadView("tabs");
+      //hide(); // default is not visible when tabs is coming
+
+      if (tabs == null) NwkUiTabs.loadView("tabs", delegate(bool success)
+      {
+        //failed to load tabs view
+        if (!success) show();
+      });
     }
     else
     {
@@ -72,11 +78,13 @@ abstract public class NwkUiView : MonoBehaviour, iNwkUiTab
   public void show()
   {
     _canvas.enabled = true;
+    //Debug.Log(name + " => show");
   }
 
   public void hide()
   {
     _canvas.enabled = false;
+    //Debug.Log(name + " => hide");
   }
 
 

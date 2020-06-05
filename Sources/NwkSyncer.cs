@@ -53,8 +53,10 @@ public class NwkSyncer : NwkMono
     }
   }
 
-  private void Start()
+  protected override void Start()
   {
+    base.Start();
+
     if (nwkServer != null)
     {
       GameObject.DestroyImmediate(this);

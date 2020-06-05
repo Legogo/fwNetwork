@@ -8,6 +8,9 @@ public class NwkMono : MonoBehaviour
   protected NwkServer nwkServer;
 
   virtual protected void Awake()
+  { }
+
+  virtual protected void Start()
   {
     NwkSystemBase nwkCtx = NwkSystemBase.nwkSys;
     nwkClient = nwkCtx as NwkClient;
