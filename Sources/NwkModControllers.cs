@@ -6,6 +6,11 @@ using System;
 
 /// <summary>
 /// module meant to sync plugged controller info
+/// 
+/// TODO
+/// all data must be contained in nwk fwp
+/// no dep out of nwk fwp
+/// 
 /// </summary>
 
 public class NwkModControllers : NwkModule, iNwkSync
