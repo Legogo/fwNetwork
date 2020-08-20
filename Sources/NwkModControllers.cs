@@ -88,3 +88,17 @@ public class NwkModControllers : NwkModule, iNwkSync
   }
 
 }
+
+[System.Serializable]
+public class SolverClientControllersWrapper
+{
+  public short nwkUID;
+  public List<SolverControllerState> states;
+}
+
+[System.Serializable]
+public class SolverControllerState
+{
+  public int deviceId = -1;
+  public short brainUID = -1;
+}
