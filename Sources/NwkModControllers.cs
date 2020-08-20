@@ -13,16 +13,11 @@ using System;
 /// 
 /// </summary>
 
-public class NwkModControllers : NwkModule, iNwkSync
+abstract public class NwkModControllers : NwkModule, iNwkSync
 {
-  SolverControllers sControl;
-
   protected override void setupModule()
   {
     base.setupModule();
-
-    sControl = qh.gc<SolverControllers>();
-    Debug.Assert(sControl);
 
     this.subSync();
   }
@@ -44,10 +39,12 @@ public class NwkModControllers : NwkModule, iNwkSync
   /// <summary>
   /// sending data to server
   /// </summary>
-  public object pack()
-  {
-    return sControl.clients;
-  }
+  public object pack() => getClients();
+
+  /// <summary>
+  /// returns a list of solved clients in context
+  /// </summary>
+  abstract protected List<SolverClientControllersWrapper> getClients();
 
   NwkSyncableData syncData;
   public NwkSyncableData getData()
@@ -66,9 +63,11 @@ public class NwkModControllers : NwkModule, iNwkSync
   {
     base.drawGui();
 
-    for (int i = 0; i < sControl.clients.Count; i++)
+    List<SolverClientControllersWrapper> clients = getClients();
+
+    for (int i = 0; i < clients.Count; i++)
     {
-      List<SolverControllerState> states = sControl.clients[i].states;
+      List<SolverControllerState> states = clients[i].states;
 
       string ids = "";
       for (int j = 0; j < states.Count; j++)
@@ -77,7 +76,7 @@ public class NwkModControllers : NwkModule, iNwkSync
         ids += states[j].deviceId;
       }
 
-      GUILayout.Label(sControl.clients[i].nwkUID+ " ? " + ids);
+      GUILayout.Label(clients[i].nwkUID+ " ? " + ids);
     }
     
   }
