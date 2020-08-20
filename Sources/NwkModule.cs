@@ -12,8 +12,10 @@ abstract public class NwkModule : NwkMono
 
   //NwkServer _server;
 
-  void Start()
+  protected override void setup()
   {
+    base.setup();
+
     //if(GameObject.FindObjectOfType<NwkSyncer>() == null) log("<color=red>no syncer</color> ; can't sync stuff");
 
     owner = GameObject.FindObjectOfType<NwkSystemBase>();

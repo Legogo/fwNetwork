@@ -1,4 +1,5 @@
 ﻿using UnityEngine.Networking;
+using UnityEngine;
 
 [System.Serializable]
 public class NwkMessageBasic : MessageBase, iNwkMessageId

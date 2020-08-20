@@ -14,8 +14,7 @@ abstract public class NwkIpFetcher : MonoBehaviour
 {
   abstract public string getServerQueryUrl();
 
-  [ReadOnly]
-  public string[] server_ips;
+  string[] server_ips;
 
   IEnumerator Start()
   {

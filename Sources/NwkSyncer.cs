@@ -53,9 +53,9 @@ public class NwkSyncer : NwkMono
     }
   }
 
-  protected override void Start()
+  protected override void setup()
   {
-    base.Start();
+    base.setup();
 
     if (nwkServer != null)
     {

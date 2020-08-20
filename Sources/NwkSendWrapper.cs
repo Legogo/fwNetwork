@@ -84,11 +84,12 @@ abstract public class NwkSendWrapper
   /// </summary>
   int sendABatch()
   {
+    throw new System.NotImplementedException("no yet implem");
+
     //send a pack
     int toSend = Mathf.Min(msgs.Count, maxPerBatch);
     for (int i = 0; i < toSend; i++)
     {
-      throw new System.NotImplementedException("no yet implem");
       //send(msgs[i]);
     }
 
